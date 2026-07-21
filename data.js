@@ -9,7 +9,7 @@ const YEAR_LABEL = "2026 하반기";
 
 // 상담 신청 접수 GAS 웹앱 URL — gas-form.gs를 script.google.com에 배포 후 /exec 주소를 붙여넣을 것
 // 비어 있으면 빌드 시 경고가 출력되고, 폼은 데모 모드(시트 기록 없이 완료 화면)로 동작
-const FORM_ENDPOINT = "";
+const FORM_ENDPOINT = "https://script.google.com/macros/s/AKfycbwM_RUWCIPUWOAheguPujsuIAQ_XcxshA7SIbkLr_IBmOCalGZQI-B3qoZCXZsyeUrB/exec";
 
 // ------------------------------------------------------------
 // 개강 일정 (2026 하반기)
