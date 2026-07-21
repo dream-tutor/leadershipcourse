@@ -154,6 +154,23 @@ tbody tr:hover{background:var(--gold-pale)}
 .quote-grid blockquote{background:var(--paper);border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:12px;padding:22px;font-size:15px;color:#33403a}
 .quote-grid cite{display:block;margin-top:12px;font-style:normal;font-weight:700;color:var(--green);font-size:13.5px}
 
+/* gallery */
+.gallery{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+@media(max-width:640px){.gallery{grid-template-columns:1fr}}
+.ph{margin:0;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:#fff}
+.ph img{width:100%;height:280px;object-fit:cover;display:block;transition:.25s}
+.ph:hover img{transform:scale(1.02)}
+.ph figcaption{padding:10px 16px;font-size:13px;color:var(--muted)}
+.quote-grid cite a{color:var(--gold);text-decoration:underline;text-underline-offset:3px}
+
+/* reviews */
+.review-list{display:grid;gap:26px}
+.review{background:var(--paper);border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:14px;padding:30px 32px}
+.review h2{font-size:20px;font-weight:800;margin-bottom:6px;color:var(--green)}
+.review-author{font-size:13.5px;font-weight:700;color:var(--gold);margin-bottom:16px}
+.review p{margin-bottom:12px;font-size:15px;color:#33403a}
+.review p:last-child{margin-bottom:0}
+
 /* consult form */
 .consult{background:linear-gradient(135deg,var(--green-dark),var(--green));color:#fff;padding:72px 0}
 .consult-grid{display:grid;grid-template-columns:1fr 1.15fr;gap:48px;align-items:start}
