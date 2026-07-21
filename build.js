@@ -1343,6 +1343,10 @@ fs.writeFileSync(path.join(OUT, "robots.txt"), `User-agent: *\nAllow: /\nSitemap
 fs.writeFileSync(path.join(OUT, "CNAME"), BASE_URL.replace(/^https?:\/\//, ""));
 fs.writeFileSync(path.join(OUT, ".nojekyll"), "");
 
+// IndexNow 키 검증 파일 (제출 크론은 sangsang-workers에서 매일 실행)
+const INDEXNOW_KEY = "5e5ad86af25533efae3948773b676a6c";
+fs.writeFileSync(path.join(OUT, `${INDEXNOW_KEY}.txt`), INDEXNOW_KEY);
+
 // rss.xml — 네이버 서치어드바이저 제출용 (항목 추가 시 pubDate는 고정 날짜로 기입)
 const RSS_ITEMS = [
   { title: `${YEAR_LABEL} 데일카네기 전국 공개과정 개강 일정 안내`, link: `${BASE_URL}/index.html`, date: "Mon, 20 Jul 2026 09:00:00 +0900", desc: "최고경영자 코스·데일카네기 코스(DCC)·리더십·세일즈·프레젠테이션 과정의 전국 개강 일정과 지역별 모집 안내." },
