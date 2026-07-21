@@ -580,6 +580,15 @@ ${rows.length ? `<section class="section">
   </div>
 </section>` : `<section class="section"><div class="wrap"><h2 class="sec-title">개강 일정</h2><p class="sec-sub">현재 모집 중인 기수 일정은 문의 시 안내드립니다.</p></div></section>`}
 
+${COMBO_COURSES.includes(key) ? `<section class="section alt">
+  <div class="wrap">
+    <h2 class="sec-title-sm">지역별 ${c.name} 안내</h2>
+    <div class="chip-grid">
+      ${Object.keys(REGIONS).map((s) => `<a class="chip" href="${comboFile(s, key)}">${REGIONS[s].name}</a>`).join("\n")}
+    </div>
+  </div>
+</section>` : ""}
+
 ${consultSection({ course: key })}`;
 
   return page({
@@ -650,6 +659,15 @@ ${rows.length ? `<section class="section alt">
   </div>
 </section>` : ""}
 
+<section class="section">
+  <div class="wrap">
+    <h2 class="sec-title-sm">${r.name} 과정별 안내</h2>
+    <div class="chip-grid">
+      ${COMBO_COURSES.map((k) => `<a class="chip" href="${comboFile(slug, k)}">${r.name} ${COURSES[k].name}</a>`).join("\n")}
+    </div>
+  </div>
+</section>
+
 ${why5Html()}
 
 <section class="section alt">
@@ -694,6 +712,133 @@ ${consultSection({ region: slug })}`;
           provider: { "@type": "Organization", name: "데일카네기코리아 " + b.label },
         }
       : null,
+  });
+}
+
+// ------------------------------------------------------------
+// 지역 × 과정 조합 페이지 (SEO 확장)
+// ------------------------------------------------------------
+const COMBO_COURSES = ["dcc", "dcs", "lac", "ltm", "dylp", "hip", "youth"];
+// 과정별 검색 키워드 보조 문구 (title/desc용)
+const COMBO_KW = {
+  dcc: "성인 리더십 · 자신감 · 커뮤니케이션 교육",
+  dcs: "세일즈 교육 · 영업 역량 강화 과정",
+  lac: "리더십 교육 · 팀장 리더십 과정",
+  ltm: "매니저 리더십 · 중간관리자 교육",
+  dylp: "신임리더 · 예비 관리자 교육",
+  hip: "프레젠테이션 교육 · 스피치 과정",
+  youth: "청소년 리더십 캠프 · 인성 교육",
+};
+
+function comboFile(regionSlug, courseKey) {
+  return `${regionSlug}-${courseKey}.html`;
+}
+
+function buildCombo(regionSlug, courseKey) {
+  const r = REGIONS[regionSlug];
+  const c = COURSES[courseKey];
+  const d = DETAIL[courseKey];
+  const localRows = SCHEDULE.filter((s) => s.region === regionSlug && s.course === courseKey);
+  const allRows = SCHEDULE.filter((s) => s.course === courseKey);
+
+  const hero = `<section class="hero hero-course">
+  <div class="wrap hero-inner">
+    <p class="hero-kicker">${r.name} · ${c.code} · ${esc(c.eng)}</p>
+    <h1>${r.name} ${c.name}</h1>
+    <p class="hero-sub">${c.tag}</p>
+  </div>
+</section>`;
+
+  const scheduleBlock = localRows.length
+    ? `<section class="section alt">
+  <div class="wrap">
+    <h2 class="sec-title">${r.name} ${YEAR_LABEL} 개강 일정</h2>
+    ${scheduleTable(localRows, { linkRegion: false })}
+    <p class="sec-sub" style="margin-top:14px">교육 장소: ${r.venue}</p>
+  </div>
+</section>`
+    : `<section class="section alt">
+  <div class="wrap">
+    <h2 class="sec-title">${r.name} 개강 일정</h2>
+    <p class="sec-sub">${r.name} 지역의 ${c.name} 개강 일정은 준비 중입니다. 아래 전국 일정을 참고하시거나,
+    하단 상담 신청을 남겨 주시면 ${r.name} 인근 개설 소식과 참여 가능한 가까운 일정을 안내드립니다.
+    기업·단체 대상 지역 맞춤 개설 문의도 가능합니다.</p>
+    ${allRows.length ? scheduleTable(allRows) : ""}
+  </div>
+</section>`;
+
+  const otherCourses = COMBO_COURSES.filter((k) => k !== courseKey)
+    .map((k) => `<a class="chip" href="${comboFile(regionSlug, k)}">${r.name} ${COURSES[k].name}</a>`)
+    .join("\n");
+  const otherRegions = Object.keys(REGIONS)
+    .filter((s) => s !== regionSlug)
+    .map((s) => `<a class="chip" href="${comboFile(s, courseKey)}">${REGIONS[s].name}</a>`)
+    .join("\n");
+
+  const body = `
+<section class="section">
+  <div class="wrap narrow">
+    <p class="lead">${r.name}에서 ${c.name}를 찾고 계신가요? ${d.intro}</p>
+    <div class="fact-row">
+      <div><span>기간</span><strong>${c.duration}</strong></div>
+      <div><span>대상</span><strong>${c.target}</strong></div>
+    </div>
+  </div>
+</section>
+
+${scheduleBlock}
+
+<section class="section">
+  <div class="wrap two-col">
+    <div>
+      <h2 class="sec-title-sm">이런 분께 추천합니다</h2>
+      <ul class="check-list">${d.targets.map((t) => `<li>${t}</li>`).join("")}</ul>
+    </div>
+    <div>
+      <h2 class="sec-title-sm">이 과정을 들으면 이렇게 달라집니다</h2>
+      <ul class="check-list gold">${d.goals.map((t) => `<li>${t}</li>`).join("")}</ul>
+    </div>
+  </div>
+</section>
+
+<section class="section alt">
+  <div class="wrap">
+    <h2 class="sec-title">커리큘럼</h2>
+    <div class="table-wrap"><table class="curri">
+      <thead><tr><th>구분</th><th>교육 내용</th></tr></thead>
+      <tbody>${d.curriculum.map(([w, t]) => `<tr><td class="td-week">${w}</td><td>${t}</td></tr>`).join("")}</tbody>
+    </table></div>
+    <p class="sec-sub" style="margin-top:14px">과정 전체 안내는 <a href="${c.slug}.html">${c.name} 상세 페이지</a>에서 확인하세요.</p>
+  </div>
+</section>
+
+${why5Html()}
+
+<section class="section">
+  <div class="wrap">
+    <h2 class="sec-title-sm">${r.name}의 다른 과정</h2>
+    <div class="chip-grid" style="margin-bottom:34px">${otherCourses}
+      <a class="chip" href="${regionSlug}.html">${r.name} 최고경영자 코스</a></div>
+    <h2 class="sec-title-sm">다른 지역의 ${c.name}</h2>
+    <div class="chip-grid">${otherRegions}</div>
+  </div>
+</section>
+
+${consultSection({ course: courseKey, region: regionSlug })}`;
+
+  return page({
+    file: comboFile(regionSlug, courseKey),
+    title: `${r.name} ${c.name} | ${r.name} ${COMBO_KW[courseKey]}`,
+    desc: `${r.name} ${c.name} 안내 — ${c.short} ${c.duration}. ${localRows.length ? `${YEAR_LABEL} ${r.name} 개강 일정과 수강료,` : `${r.name} 개설 일정과`} 커리큘럼, 온라인 상담 신청.`,
+    hero,
+    body,
+    jsonld: {
+      "@context": "https://schema.org",
+      "@type": "Course",
+      name: `${r.name} ${c.name}`,
+      description: `${r.name} ${COMBO_KW[courseKey]} — ${c.short}`,
+      provider: { "@type": "Organization", name: "데일카네기 공개과정" },
+    },
   });
 }
 
@@ -903,6 +1048,7 @@ pages.push(buildIndex());
 pages.push(buildAbout());
 for (const k of Object.keys(COURSES)) pages.push(buildCourse(k));
 for (const slug of Object.keys(REGIONS)) pages.push(buildRegion(slug));
+for (const slug of Object.keys(REGIONS)) for (const k of COMBO_COURSES) pages.push(buildCombo(slug, k));
 
 for (const p of pages) fs.writeFileSync(path.join(OUT, p.file), p.html);
 fs.writeFileSync(path.join(OUT, "style.css"), CSS);
