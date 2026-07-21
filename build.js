@@ -32,6 +32,8 @@ function page({ file, title, desc, body, hero = "", jsonld = null }) {
 <meta property="og:description" content="${esc(desc)}">
 <meta property="og:url" content="${url}">
 <meta property="og:locale" content="ko_KR">
+<meta name="google-site-verification" content="VX3_rCXNNSHvHSQZHKBdGHgiPDfJ0M2wZ6wJtFcq_YU">
+<meta name="naver-site-verification" content="dbd104a111caeca5379e2fd4b5e27f55a5eec692">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230c3b2e'/%3E%3Ctext x='32' y='45' font-size='34' font-weight='bold' text-anchor='middle' fill='%23c6a15b' font-family='Arial'%3EC%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="style.css">
