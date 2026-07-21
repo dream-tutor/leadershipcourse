@@ -1189,5 +1189,33 @@ fs.writeFileSync(path.join(OUT, "robots.txt"), `User-agent: *\nAllow: /\nSitemap
 fs.writeFileSync(path.join(OUT, "CNAME"), BASE_URL.replace(/^https?:\/\//, ""));
 fs.writeFileSync(path.join(OUT, ".nojekyll"), "");
 
+// rss.xml — 네이버 서치어드바이저 제출용 (항목 추가 시 pubDate는 고정 날짜로 기입)
+const RSS_ITEMS = [
+  { title: `${YEAR_LABEL} 데일카네기 전국 공개과정 개강 일정 안내`, link: `${BASE_URL}/index.html`, date: "Mon, 20 Jul 2026 09:00:00 +0900", desc: "최고경영자 코스·데일카네기 코스(DCC)·리더십·세일즈·프레젠테이션 과정의 전국 개강 일정과 지역별 모집 안내." },
+  ...REVIEWS.map((rv, i) => ({
+    title: `[수강 후기] ${rv.title}`,
+    link: `${BASE_URL}/reviews.html`,
+    date: `Mon, ${String(13 + i).padStart(2, "0")} Jul 2026 09:00:00 +0900`,
+    desc: rv.excerpt,
+  })),
+];
+const rssItems = RSS_ITEMS.map((it) => `  <item>
+    <title>${esc(it.title)}</title>
+    <link>${it.link}</link>
+    <guid isPermaLink="false">${it.link}#${esc(it.title)}</guid>
+    <pubDate>${it.date}</pubDate>
+    <description>${esc(it.desc)}</description>
+  </item>`).join("\n");
+fs.writeFileSync(path.join(OUT, "rss.xml"), `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+<channel>
+  <title>카네기코스 — 데일카네기 공개과정 안내</title>
+  <link>${BASE_URL}</link>
+  <description>데일카네기 최고경영자 코스·데일카네기 코스 등 전국 공개과정 개강 일정과 수강 후기</description>
+  <language>ko</language>
+${rssItems}
+</channel>
+</rss>`);
+
 console.log(`생성 완료: ${pages.length}개 페이지 + style.css + sitemap.xml + robots.txt → docs/`);
 if (!FORM_ENDPOINT) console.warn("⚠ FORM_ENDPOINT가 비어 있습니다 — 상담 양식이 데모 모드입니다. gas-form.gs 배포 후 data.js에 /exec 주소를 넣고 재생성하세요.");
