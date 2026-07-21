@@ -5,6 +5,7 @@
 const fs = require("fs");
 const path = require("path");
 const { BASE_URL, YEAR_LABEL, FORM_ENDPOINT, SCHEDULE, REGIONS, BRANCH, COURSES, REVIEWS } = require("./data.js");
+const GUIDES = [...require("./guides-reference.js"), ...require("./guides-columns.js")];
 
 const OUT = path.join(__dirname, "docs"); // GitHub Pages 배포 폴더 (main 브랜치 /docs)
 fs.mkdirSync(OUT, { recursive: true });
@@ -49,6 +50,7 @@ ${jsonld ? `<script type="application/ld+json">${JSON.stringify(jsonld)}</script
       <a href="index.html#schedule">개강 일정</a>
       <a href="index.html#regions">지역별 안내</a>
       <a href="reviews.html">수강 후기</a>
+      <a href="guide.html">리더십 칼럼</a>
       <a class="nav-cta" href="#consult">상담 신청</a>
       <details class="mnav">
         <summary aria-label="메뉴 열기">☰</summary>
@@ -58,6 +60,7 @@ ${jsonld ? `<script type="application/ld+json">${JSON.stringify(jsonld)}</script
           <a href="index.html#schedule">개강 일정</a>
           <a href="index.html#regions">지역별 안내</a>
           <a href="reviews.html">수강 후기</a>
+          <a href="guide.html">리더십 칼럼</a>
           <a href="#consult">상담 신청</a>
         </div>
       </details>
@@ -328,6 +331,15 @@ ${why5Html()}
       <p>워렌 버핏은 "데일 카네기 코스에서 배운 인간관계와 커뮤니케이션 스킬은 내가 가진 것 중 가장 중요한 학위였다"고 말했습니다.</p>
       <a class="btn btn-green" href="about.html">데일 카네기 이야기 →</a>
     </div>
+  </div>
+</section>
+
+<section class="section alt">
+  <div class="wrap">
+    <h2 class="sec-title">리더십 칼럼</h2>
+    <p class="sec-sub">카네기 인간관계론 원칙부터 발표 불안, 동기부여, CEO 네트워킹까지 — 리더의 고민에 답하는 글들.</p>
+    <div class="guide-grid">${GUIDES.slice(0, 6).map(guideCard).join("\n")}</div>
+    <p style="margin-top:22px"><a class="btn btn-green" href="guide.html">칼럼 전체 보기 →</a></p>
   </div>
 </section>
 
@@ -734,6 +746,20 @@ ${rows.length ? `<section class="section alt">
   </div>
 </section>
 
+<section class="section alt">
+  <div class="wrap narrow">
+    <h2 class="sec-title">${r.name} CEO 모임 · 경영자 네트워킹을 찾고 계신가요</h2>
+    <p>대표의 고민은 회사 안에서 나누기 어렵습니다. 그래서 ${r.name}의 많은 경영자들이 최고경영자 코스를 교육이자 동시에 검증된 경영자 모임으로 선택합니다.
+    매주 저녁, 같은 지역에서 사업을 이끄는 CEO·임원·전문직 동기들과 12주를 함께 통과하며 쌓인 신뢰는 명함 교환식 모임과는 밀도가 다릅니다.</p>
+    <ul class="check-list" style="margin-top:14px">
+      <li>${r.name} 지역 기수 동기 모임 — 수료 후에도 계속되는 정기 교류</li>
+      <li>한국카네기클럽 정회원 — 전국 30,000명 경영자 동문 네트워크</li>
+      <li>조찬포럼 · 트레킹 · 골프 · 세미나 등 문화활동</li>
+    </ul>
+    <p class="sec-sub" style="margin-top:16px">관련 글: <a href="guide-ceo-network.html">CEO에게 좋은 모임이 필요한 진짜 이유</a></p>
+  </div>
+</section>
+
 ${why5Html()}
 
 <section class="section alt">
@@ -818,6 +844,90 @@ ${consultSection()}`;
     desc: "데일카네기 최고경영자 코스와 데일카네기 코스를 수료한 수강생들이 직접 남긴 후기 모음. 12주 과정에서 얻은 자신감·열정·인간관계의 변화를 확인하세요.",
     hero,
     body,
+  });
+}
+
+// ------------------------------------------------------------
+// 리더십 칼럼 (guide.html 목차 + 개별 글)
+// ------------------------------------------------------------
+function guideCard(g) {
+  return `<a class="guide-card" href="${g.slug}.html">
+    <h3>${g.title}</h3>
+    <p>${g.desc}</p>
+    <span class="guide-more">읽어보기 →</span>
+  </a>`;
+}
+
+function buildGuideIndex() {
+  const refs = GUIDES.slice(0, 4);
+  const cols = GUIDES.slice(4);
+  const hero = `<section class="hero hero-sm">
+  <div class="wrap hero-inner">
+    <p class="hero-kicker">Leadership Column</p>
+    <h1>리더십 칼럼</h1>
+    <p class="hero-sub">데일 카네기의 원칙과, 리더들이 현장에서 마주하는 고민에 대한 글들입니다.</p>
+  </div>
+</section>`;
+  const body = `
+<section class="section">
+  <div class="wrap">
+    <h2 class="sec-title">데일 카네기의 원칙</h2>
+    <div class="guide-grid">${refs.map(guideCard).join("\n")}</div>
+  </div>
+</section>
+<section class="section alt">
+  <div class="wrap">
+    <h2 class="sec-title">리더의 고민에 답하다</h2>
+    <p class="sec-sub">발표 불안부터 위임, 동기부여, CEO 네트워킹까지 — 과정별 전문 칼럼입니다.</p>
+    <div class="guide-grid">${cols.map(guideCard).join("\n")}</div>
+  </div>
+</section>
+${consultSection()}`;
+  return page({
+    file: "guide.html",
+    title: "리더십 칼럼 | 카네기 인간관계론·리더십·스피치·동기부여",
+    desc: "카네기 인간관계론 30원칙, 데일 카네기 명언, 발표 불안 극복, 신임 팀장 가이드, 직원 동기부여, CEO 네트워킹 등 리더를 위한 칼럼 모음.",
+    hero,
+    body,
+  });
+}
+
+function buildGuideArticle(g) {
+  const c = COURSES[g.course];
+  const others = GUIDES.filter((x) => x.slug !== g.slug && x.course === g.course).slice(0, 2);
+  const hero = `<section class="hero hero-sm">
+  <div class="wrap hero-inner">
+    <p class="hero-kicker">리더십 칼럼</p>
+    <h1>${g.title}</h1>
+  </div>
+</section>`;
+  const body = `
+<section class="section">
+  <div class="wrap narrow guide-body">
+    ${g.body}
+    <div class="guide-cta">
+      <span>이 주제를 훈련으로 바꾸고 싶다면</span>
+      <a class="btn btn-green" href="${c.slug}.html">${c.name} 알아보기 →</a>
+    </div>
+    ${others.length ? `<p class="sec-sub" style="margin-top:26px">함께 읽으면 좋은 글:
+      ${others.map((o) => `<a href="${o.slug}.html">${o.title}</a>`).join(" · ")} · <a href="guide.html">칼럼 전체 보기</a></p>` : `<p class="sec-sub" style="margin-top:26px"><a href="guide.html">칼럼 전체 보기 →</a></p>`}
+  </div>
+</section>
+${consultSection({ course: g.course })}`;
+  return page({
+    file: `${g.slug}.html`,
+    title: g.metaTitle,
+    desc: g.desc,
+    hero,
+    body,
+    jsonld: {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      headline: g.title,
+      description: g.desc,
+      datePublished: g.date,
+      author: { "@type": "Organization", name: "카네기코스" },
+    },
   });
 }
 
@@ -1138,6 +1248,24 @@ tbody tr:hover{background:var(--gold-pale)}
 .ph figcaption{padding:10px 16px;font-size:13px;color:var(--muted)}
 .quote-grid cite a{color:var(--gold);text-decoration:underline;text-underline-offset:3px}
 
+/* guide */
+.guide-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+@media(max-width:720px){.guide-grid{grid-template-columns:1fr}}
+.guide-card{display:flex;flex-direction:column;gap:8px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:24px;transition:.15s}
+.section:not(.alt) .guide-card{background:var(--paper)}
+.guide-card:hover{border-color:var(--gold);box-shadow:0 10px 26px rgba(12,59,46,.08);transform:translateY(-2px)}
+.guide-card h3{font-size:17px;font-weight:800;color:var(--green)}
+.guide-card p{font-size:14px;color:var(--muted);flex:1}
+.guide-more{font-size:13.5px;font-weight:700;color:var(--gold)}
+.guide-body p{margin-bottom:16px;font-size:15.5px;color:#2c3833}
+.guide-body .lead{font-size:17px}
+.guide-body h2{margin-top:34px}
+.guide-body .step-list,.guide-body .check-list{margin-bottom:18px}
+.guide-body .quote-grid{margin-bottom:18px}
+.guide-body a{color:var(--green);font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.guide-cta{margin-top:30px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:22px 26px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.guide-cta span{font-weight:800;font-size:16px}
+
 /* reviews */
 .review-list{display:grid;gap:26px}
 .review{background:var(--paper);border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:14px;padding:30px 32px}
@@ -1192,6 +1320,8 @@ const pages = [];
 pages.push(buildIndex());
 pages.push(buildAbout());
 pages.push(buildReviews());
+pages.push(buildGuideIndex());
+for (const g of GUIDES) pages.push(buildGuideArticle(g));
 for (const k of Object.keys(COURSES)) pages.push(buildCourse(k));
 for (const slug of Object.keys(REGIONS)) pages.push(buildRegion(slug));
 for (const slug of Object.keys(REGIONS)) for (const k of COMBO_COURSES) pages.push(buildCombo(slug, k));
@@ -1220,6 +1350,12 @@ const RSS_ITEMS = [
     link: `${BASE_URL}/reviews.html`,
     date: `Mon, ${String(13 + i).padStart(2, "0")} Jul 2026 09:00:00 +0900`,
     desc: rv.excerpt,
+  })),
+  ...GUIDES.map((g) => ({
+    title: `[리더십 칼럼] ${g.title}`,
+    link: `${BASE_URL}/${g.slug}.html`,
+    date: new Date(g.date + "T09:00:00+09:00").toUTCString(),
+    desc: g.desc,
   })),
 ];
 const rssItems = RSS_ITEMS.map((it) => `  <item>
