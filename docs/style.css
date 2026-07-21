@@ -185,6 +185,24 @@ tbody tr:hover{background:var(--gold-pale)}
 .ph figcaption{padding:10px 16px;font-size:13px;color:var(--muted)}
 .quote-grid cite a{color:var(--gold);text-decoration:underline;text-underline-offset:3px}
 
+/* guide */
+.guide-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+@media(max-width:720px){.guide-grid{grid-template-columns:1fr}}
+.guide-card{display:flex;flex-direction:column;gap:8px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:24px;transition:.15s}
+.section:not(.alt) .guide-card{background:var(--paper)}
+.guide-card:hover{border-color:var(--gold);box-shadow:0 10px 26px rgba(12,59,46,.08);transform:translateY(-2px)}
+.guide-card h3{font-size:17px;font-weight:800;color:var(--green)}
+.guide-card p{font-size:14px;color:var(--muted);flex:1}
+.guide-more{font-size:13.5px;font-weight:700;color:var(--gold)}
+.guide-body p{margin-bottom:16px;font-size:15.5px;color:#2c3833}
+.guide-body .lead{font-size:17px}
+.guide-body h2{margin-top:34px}
+.guide-body .step-list,.guide-body .check-list{margin-bottom:18px}
+.guide-body .quote-grid{margin-bottom:18px}
+.guide-body a{color:var(--green);font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.guide-cta{margin-top:30px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:22px 26px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.guide-cta span{font-weight:800;font-size:16px}
+
 /* reviews */
 .review-list{display:grid;gap:26px}
 .review{background:var(--paper);border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:14px;padding:30px 32px}
