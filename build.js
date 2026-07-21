@@ -151,14 +151,15 @@ function consultSection(preset = {}) {
         <label>연락처 <span>*</span><input type="tel" name="연락처" required placeholder="010-0000-0000"></label>
       </div>
       <div class="form-row two">
-        <label>관심 과정<select name="관심과정"><option value="">선택해 주세요</option>${courseOpts}<option value="기타 문의">기타 문의</option></select></label>
-        <label>지역<select name="지역"><option value="">선택해 주세요</option>${regionOpts}<option value="기타/미정">기타/미정</option></select></label>
-      </div>
-      <div class="form-row two">
+        <label>소속 · 직급<input type="text" name="소속직급" placeholder="예: 기업 대표 / OO전자 팀장 / 자영업"></label>
         <label>연락 희망 시간<select name="연락희망시간"><option value="아무 때나">아무 때나</option><option>오전 (9시~12시)</option><option>오후 (12시~18시)</option><option>저녁 (18시 이후)</option></select></label>
       </div>
+      <div class="form-row two">
+        <label>문의 과정<select name="관심과정"><option value="">선택해 주세요</option>${courseOpts}<option value="기타 문의">기타 문의</option></select></label>
+        <label>문의 지역<select name="지역"><option value="">선택해 주세요</option>${regionOpts}<option value="기타/미정">기타/미정</option></select></label>
+      </div>
       <div class="form-row">
-        <label>문의 내용<textarea name="문의내용" rows="4" placeholder="궁금하신 내용을 자유롭게 남겨 주세요 (선택)"></textarea></label>
+        <label>문의 내용<textarea name="문의내용" rows="5" placeholder="문의하시게 된 계기, 관심 있는 교육 주제, 등록·수강 관련 궁금한 점을 자유롭게 남겨 주세요"></textarea></label>
       </div>
       <button type="submit" class="btn btn-gold form-submit">상담 신청하기</button>
       <p class="form-fine">남겨주신 정보는 상담 목적으로만 사용됩니다.</p>
@@ -181,7 +182,7 @@ function consultSection(preset = {}) {
       var btn = form.querySelector('.form-submit');
       btn.disabled = true; btn.textContent = '접수 중...';
       var data = {
-        '이름': name, '연락처': tel,
+        '이름': name, '연락처': tel, '소속직급': f.get('소속직급')||'',
         '관심과정': f.get('관심과정')||'', '지역': f.get('지역')||'',
         '연락희망시간': f.get('연락희망시간')||'', '문의내용': f.get('문의내용')||'',
         '신청일': new Date().toLocaleString('ko-KR'),
