@@ -8,6 +8,7 @@ const { BASE_URL, YEAR_LABEL, FORM_ENDPOINT, SCHEDULE, REGIONS, BRANCH, COURSES,
 const GUIDES = [...require("./guides-reference.js"), ...require("./guides-columns.js")];
 
 const OUT = path.join(__dirname, "docs"); // GitHub Pages 배포 폴더 (main 브랜치 /docs)
+const CSS_VER = Date.now().toString(36); // 빌드마다 갱신 — CSS 캐시 어긋남 방지
 fs.mkdirSync(OUT, { recursive: true });
 
 const fee = (v) => (v == null ? "미정" : v.toLocaleString("ko-KR") + "원");
@@ -37,7 +38,7 @@ function page({ file, title, desc, body, hero = "", jsonld = null }) {
 <meta name="naver-site-verification" content="dbd104a111caeca5379e2fd4b5e27f55a5eec692">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230c3b2e'/%3E%3Ctext x='32' y='45' font-size='34' font-weight='bold' text-anchor='middle' fill='%23c6a15b' font-family='Arial'%3EC%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=${CSS_VER}">
 ${jsonld ? `<script type="application/ld+json">${JSON.stringify(jsonld)}</script>` : ""}
 </head>
 <body>
