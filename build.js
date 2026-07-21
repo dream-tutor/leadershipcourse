@@ -4,7 +4,7 @@
 // ============================================================
 const fs = require("fs");
 const path = require("path");
-const { BASE_URL, YEAR_LABEL, FORM_ENDPOINT, SCHEDULE, REGIONS, BRANCH, COURSES } = require("./data.js");
+const { BASE_URL, YEAR_LABEL, FORM_ENDPOINT, SCHEDULE, REGIONS, BRANCH, COURSES, REVIEWS } = require("./data.js");
 
 const OUT = path.join(__dirname, "docs"); // GitHub Pages 배포 폴더 (main 브랜치 /docs)
 fs.mkdirSync(OUT, { recursive: true });
@@ -46,6 +46,7 @@ ${jsonld ? `<script type="application/ld+json">${JSON.stringify(jsonld)}</script
       <a href="index.html#courses">과정 안내</a>
       <a href="index.html#schedule">개강 일정</a>
       <a href="index.html#regions">지역별 안내</a>
+      <a href="reviews.html">수강 후기</a>
       <a class="nav-cta" href="#consult">상담 신청</a>
     </nav>
   </div>
@@ -125,6 +126,29 @@ function scheduleTable(rows, { linkRegion = true } = {}) {
     <thead><tr><th>과정</th><th>기수</th><th>개강</th><th>수료</th><th>요일</th><th>기간</th><th>수강료</th></tr></thead>
     <tbody>${tr}</tbody>
   </table></div>`;
+}
+
+// 교육 현장 사진 갤러리 (얼굴 모자이크 처리본)
+const GALLERY_IMGS = [
+  ["class-001.jpg", "데일카네기 강의 현장 — 강사와 수강생"],
+  ["class-006.jpg", "펩톡(Pep Talk) 실습 장면"],
+  ["class-007.jpg", "수강생 네트워킹과 조별 실습"],
+  ["class-009.jpg", "수강생 발표 실습 장면"],
+  ["class-005.jpg", "데일카네기 최고경영자과정 교육장"],
+  ["class-004.jpg", "데일카네기 공인 수료증과 리더십 어워드 메달"],
+];
+
+function galleryHtml(count = 4, title = "교육 현장") {
+  const imgs = GALLERY_IMGS.slice(0, count)
+    .map(([f, alt]) => `<figure class="ph"><img src="assets/${f}" alt="${alt}" loading="lazy"><figcaption>${alt}</figcaption></figure>`)
+    .join("\n");
+  return `<section class="section gallery-sec">
+  <div class="wrap">
+    <h2 class="sec-title">${title}</h2>
+    <p class="sec-sub">실제 교육 현장의 모습입니다. (수강생 얼굴은 개인정보 보호를 위해 처리했습니다)</p>
+    <div class="gallery">${imgs}</div>
+  </div>
+</section>`;
 }
 
 function consultSection(preset = {}) {
@@ -284,7 +308,9 @@ ${why5Html()}
   </div>
 </section>
 
-<section class="section quotes">
+${galleryHtml(4)}
+
+<section class="section quotes alt">
   <div class="wrap">
     <h2 class="sec-title">수료생들의 이야기</h2>
     <div class="quote-grid">
@@ -293,6 +319,11 @@ ${why5Html()}
       <blockquote>"열정과 인간관계에 관한 현장 교육은 저희 기업을 활기찬 조직으로 바꾸는 데 큰 힘이 되었습니다."<cite>— 박성수 (이랜드그룹 회장)</cite></blockquote>
       <blockquote>"비전을 공유시키는 커뮤니케이션, 인간경영은 사업의 핵심이다. 나는 카네기 코스를 통하여 이러한 기술들을 얻을 수 있었다."<cite>— 손병두 (호암재단 이사장)</cite></blockquote>
     </div>
+    <h2 class="sec-title" style="margin-top:52px">수강생이 직접 쓴 수료 후기</h2>
+    <div class="quote-grid">
+      ${REVIEWS.slice(0, 4).map((rv) => `<blockquote>"${rv.excerpt}"<cite>— ${rv.author} · <a href="reviews.html">전문 보기</a></cite></blockquote>`).join("\n")}
+    </div>
+    <p style="margin-top:22px"><a class="btn btn-green" href="reviews.html">수강 후기 전체 보기 →</a></p>
   </div>
 </section>
 
@@ -590,6 +621,17 @@ ${COMBO_COURSES.includes(key) ? `<section class="section alt">
   </div>
 </section>` : ""}
 
+${key === "ceo" || key === "dcc" ? `${galleryHtml(4)}
+<section class="section alt">
+  <div class="wrap">
+    <h2 class="sec-title-sm">수강생이 직접 쓴 수료 후기</h2>
+    <div class="quote-grid">
+      ${REVIEWS.slice(0, 2).map((rv) => `<blockquote>"${rv.excerpt}"<cite>— ${rv.author}</cite></blockquote>`).join("\n")}
+    </div>
+    <p style="margin-top:18px"><a class="btn btn-green" href="reviews.html">수강 후기 전체 보기 →</a></p>
+  </div>
+</section>` : ""}
+
 ${consultSection({ course: key })}`;
 
   return page({
@@ -713,6 +755,46 @@ ${consultSection({ region: slug })}`;
           provider: { "@type": "Organization", name: "데일카네기코리아 " + b.label },
         }
       : null,
+  });
+}
+
+// ------------------------------------------------------------
+// 수강 후기 페이지
+// ------------------------------------------------------------
+function buildReviews() {
+  const hero = `<section class="hero hero-sm">
+  <div class="wrap hero-inner">
+    <p class="hero-kicker">Graduates' Stories</p>
+    <h1>수강생들이 직접 쓴<br>데일카네기 수료 후기</h1>
+    <p class="hero-sub">12주가 끝난 뒤, 수강생들의 삶은 어떻게 달라졌을까요. 수료생들이 직접 남긴 이야기입니다.</p>
+  </div>
+</section>`;
+
+  const articles = REVIEWS.map(
+    (rv) => `<article class="review">
+      <h2>${rv.title}</h2>
+      <p class="review-author">${rv.author}</p>
+      ${rv.paras.map((p) => `<p>${p}</p>`).join("\n")}
+    </article>`
+  ).join("\n");
+
+  const body = `
+<section class="section">
+  <div class="wrap narrow review-list">
+    ${articles}
+  </div>
+</section>
+
+${galleryHtml(6, "교육 현장 스케치")}
+
+${consultSection()}`;
+
+  return page({
+    file: "reviews.html",
+    title: "데일카네기 수강 후기 | 최고경영자 코스 · 데일카네기 코스 수료생 이야기",
+    desc: "데일카네기 최고경영자 코스와 데일카네기 코스를 수료한 수강생들이 직접 남긴 후기 모음. 12주 과정에서 얻은 자신감·열정·인간관계의 변화를 확인하세요.",
+    hero,
+    body,
   });
 }
 
@@ -1002,6 +1084,23 @@ tbody tr:hover{background:var(--gold-pale)}
 .quote-grid blockquote{background:var(--paper);border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:12px;padding:22px;font-size:15px;color:#33403a}
 .quote-grid cite{display:block;margin-top:12px;font-style:normal;font-weight:700;color:var(--green);font-size:13.5px}
 
+/* gallery */
+.gallery{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+@media(max-width:640px){.gallery{grid-template-columns:1fr}}
+.ph{margin:0;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:#fff}
+.ph img{width:100%;height:280px;object-fit:cover;display:block;transition:.25s}
+.ph:hover img{transform:scale(1.02)}
+.ph figcaption{padding:10px 16px;font-size:13px;color:var(--muted)}
+.quote-grid cite a{color:var(--gold);text-decoration:underline;text-underline-offset:3px}
+
+/* reviews */
+.review-list{display:grid;gap:26px}
+.review{background:var(--paper);border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:14px;padding:30px 32px}
+.review h2{font-size:20px;font-weight:800;margin-bottom:6px;color:var(--green)}
+.review-author{font-size:13.5px;font-weight:700;color:var(--gold);margin-bottom:16px}
+.review p{margin-bottom:12px;font-size:15px;color:#33403a}
+.review p:last-child{margin-bottom:0}
+
 /* consult form */
 .consult{background:linear-gradient(135deg,var(--green-dark),var(--green));color:#fff;padding:72px 0}
 .consult-grid{display:grid;grid-template-columns:1fr 1.15fr;gap:48px;align-items:start}
@@ -1047,6 +1146,7 @@ tbody tr:hover{background:var(--gold-pale)}
 const pages = [];
 pages.push(buildIndex());
 pages.push(buildAbout());
+pages.push(buildReviews());
 for (const k of Object.keys(COURSES)) pages.push(buildCourse(k));
 for (const slug of Object.keys(REGIONS)) pages.push(buildRegion(slug));
 for (const slug of Object.keys(REGIONS)) for (const k of COMBO_COURSES) pages.push(buildCombo(slug, k));
