@@ -12,13 +12,15 @@
  * ※ 코드 수정 후에는 배포 → 배포 관리 → 연필 아이콘 → 버전: 새 버전 → 배포 (URL은 그대로 유지됨)
  * ※ 테스트는 브라우저에서 직접 폼 제출로 할 것 (curl -X POST 금지 — GET 방식 접수)
  */
-var SHEET_ID = "여기에_시트_ID_붙여넣기";
+// 시트 ID 또는 시트 전체 URL을 붙여넣어도 됨 (자동으로 ID만 추출)
+var SHEET_ID = "여기에_시트_ID_또는_URL_붙여넣기";
 
 function doGet(e) {
   var p = (e && e.parameter) || {};
-  var sh = SpreadsheetApp.openById(SHEET_ID).getSheets()[0];
+  var id = (SHEET_ID.match(/[-\w]{25,}/) || [SHEET_ID])[0];
+  var sh = SpreadsheetApp.openById(id).getSheets()[0];
   sh.appendRow([
-    new Date(),
+    Utilities.formatDate(new Date(), "Asia/Seoul", "M/d HH:mm"),
     p["이름"] || "",
     p["연락처"] || "",
     p["소속직급"] || "",

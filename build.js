@@ -56,7 +56,16 @@ ${hero}
 ${body}
 </main>
 ${footer()}
+<a class="float-cta" href="#consult">상담 신청</a>
 <script defer src="https://xn--vb0by3y5wigqb.com/t.js" data-site="carnegie"></script>
+<script>
+(function(){
+  var fc = document.querySelector('.float-cta');
+  var consult = document.getElementById('consult');
+  if(!fc || !consult || !('IntersectionObserver' in window)) return;
+  new IntersectionObserver(function(en){ fc.classList.toggle('hide', en[0].isIntersecting); }).observe(consult);
+})();
+</script>
 </body>
 </html>`,
   };
@@ -122,7 +131,8 @@ function scheduleTable(rows, { linkRegion = true } = {}) {
       </tr>`;
     })
     .join("\n");
-  return `<div class="table-wrap"><table class="sched">
+  return `<p class="table-hint">← 표를 옆으로 밀어서 볼 수 있습니다</p>
+  <div class="table-wrap"><table class="sched">
     <thead><tr><th>과정</th><th>기수</th><th>개강</th><th>수료</th><th>요일</th><th>기간</th><th>수강료</th></tr></thead>
     <tbody>${tr}</tbody>
   </table></div>`;
@@ -1010,8 +1020,18 @@ a{color:inherit;text-decoration:none}
 .course-meta{font-size:13px;color:#8a948e}
 .course-more{font-size:14px;font-weight:700;color:var(--green)}
 
+/* floating cta */
+.float-cta{position:fixed;right:16px;bottom:18px;z-index:60;background:var(--gold);color:var(--green-dark);font-weight:800;font-size:15px;padding:13px 22px;border-radius:999px;box-shadow:0 8px 24px rgba(0,0,0,.28);transition:.2s}
+.float-cta:hover{background:var(--gold-soft)}
+.float-cta.hide{opacity:0;pointer-events:none;transform:translateY(8px)}
+
 /* schedule table */
-.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:#fff}
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:#fff;-webkit-overflow-scrolling:touch}
+@media(max-width:680px){
+  .table-wrap{position:relative}
+  .table-hint{display:block!important}
+}
+.table-hint{display:none;font-size:12px;color:var(--muted);margin:0 0 8px;text-align:right}
 table{width:100%;border-collapse:collapse;font-size:14.5px;min-width:640px}
 thead th{background:var(--green);color:#fff;font-weight:700;padding:12px 14px;text-align:left;white-space:nowrap}
 tbody td{padding:11px 14px;border-top:1px solid var(--line);white-space:nowrap}
