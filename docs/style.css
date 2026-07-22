@@ -199,7 +199,7 @@ tbody tr:hover{background:var(--gold-pale)}
 .guide-body h2{margin-top:34px}
 .guide-body .step-list,.guide-body .check-list{margin-bottom:18px}
 .guide-body .quote-grid{margin-bottom:18px}
-.guide-body a{color:var(--green);font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.guide-body a:not(.btn){color:var(--green);font-weight:700;text-decoration:underline;text-underline-offset:3px}
 .guide-cta{margin-top:30px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:22px 26px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
 .guide-cta span{font-weight:800;font-size:16px}
 
