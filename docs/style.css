@@ -225,7 +225,7 @@ tbody tr:hover{background:var(--gold-pale)}
 .form-row.two{grid-template-columns:1fr 1fr}
 @media(max-width:560px){.form-row.two{grid-template-columns:1fr}}
 .consult-form label{display:grid;gap:6px;font-size:13.5px;font-weight:700;color:#3a463f}
-.consult-form label span{color:#c0392b}
+.consult-form label .cap b{color:#c0392b;font-weight:inherit}
 .consult-form input,.consult-form select,.consult-form textarea{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:11px 13px;font-size:15px;font-family:inherit;background:#fbfaf7;color:var(--ink)}
 .consult-form input:focus,.consult-form select:focus,.consult-form textarea:focus{outline:none;border-color:var(--gold);background:#fff}
 .consult-form textarea{resize:vertical}
