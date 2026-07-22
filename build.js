@@ -198,19 +198,19 @@ function consultSection(preset = {}) {
     </div>
     <form class="consult-form" id="consultForm" autocomplete="off">
       <div class="form-row two">
-        <label>이름 <span>*</span><input type="text" name="이름" required placeholder="성함"></label>
-        <label>연락처 <span>*</span><input type="tel" name="연락처" required placeholder="010-0000-0000"></label>
+        <label><span class="cap">이름 <b>*</b></span><input type="text" name="이름" required placeholder="성함"></label>
+        <label><span class="cap">연락처 <b>*</b></span><input type="tel" name="연락처" required placeholder="010-0000-0000"></label>
       </div>
       <div class="form-row two">
-        <label>소속 · 직급<input type="text" name="소속직급" placeholder="예: 기업 대표 / OO전자 팀장 / 자영업"></label>
-        <label>연락 희망 시간<select name="연락희망시간"><option value="아무 때나">아무 때나</option><option>오전 (9시~12시)</option><option>오후 (12시~18시)</option><option>저녁 (18시 이후)</option></select></label>
+        <label><span class="cap">소속 · 직급 <b>*</b></span><input type="text" name="소속직급" required placeholder="예: 기업 대표 / OO전자 팀장 / 자영업"></label>
+        <label><span class="cap">연락 희망 시간</span><select name="연락희망시간"><option value="아무 때나">아무 때나</option><option>오전 (9시~12시)</option><option>오후 (12시~18시)</option><option>저녁 (18시 이후)</option></select></label>
       </div>
       <div class="form-row two">
-        <label>문의 과정<select name="관심과정"><option value="">선택해 주세요</option>${courseOpts}<option value="기타 문의">기타 문의</option></select></label>
-        <label>문의 지역<select name="지역"><option value="">선택해 주세요</option>${regionOpts}<option value="기타/미정">기타/미정</option></select></label>
+        <label><span class="cap">문의 과정 <b>*</b></span><select name="관심과정" required><option value="">선택해 주세요</option>${courseOpts}<option value="기타 문의">기타 문의</option></select></label>
+        <label><span class="cap">문의 지역 <b>*</b></span><select name="지역" required><option value="">선택해 주세요</option>${regionOpts}<option value="기타/미정">기타/미정</option></select></label>
       </div>
       <div class="form-row">
-        <label>문의 내용<textarea name="문의내용" rows="5" placeholder="문의하시게 된 계기, 관심 있는 교육 주제, 등록·수강 관련 궁금한 점을 자유롭게 남겨 주세요"></textarea></label>
+        <label><span class="cap">문의 내용</span><textarea name="문의내용" rows="5" placeholder="문의하시게 된 계기, 관심 있는 교육 주제, 등록·수강 관련 궁금한 점을 자유롭게 남겨 주세요"></textarea></label>
       </div>
       <button type="submit" class="btn btn-gold form-submit">상담 신청하기</button>
       <p class="form-fine">남겨주신 정보는 상담 목적으로만 사용됩니다.</p>
@@ -229,7 +229,8 @@ function consultSection(preset = {}) {
       ev.preventDefault();
       var f = new FormData(form);
       var name = (f.get('이름')||'').trim(), tel = (f.get('연락처')||'').trim();
-      if(!name || !tel){ alert('이름과 연락처를 입력해 주세요.'); return; }
+      var org = (f.get('소속직급')||'').trim(), course = f.get('관심과정')||'', region = f.get('지역')||'';
+      if(!name || !tel || !org || !course || !region){ alert('필수 항목을 모두 입력해 주세요.'); return; }
       var btn = form.querySelector('.form-submit');
       btn.disabled = true; btn.textContent = '접수 중...';
       var data = {
@@ -1289,7 +1290,7 @@ tbody tr:hover{background:var(--gold-pale)}
 .form-row.two{grid-template-columns:1fr 1fr}
 @media(max-width:560px){.form-row.two{grid-template-columns:1fr}}
 .consult-form label{display:grid;gap:6px;font-size:13.5px;font-weight:700;color:#3a463f}
-.consult-form label span{color:#c0392b}
+.consult-form label .cap b{color:#c0392b;font-weight:inherit}
 .consult-form input,.consult-form select,.consult-form textarea{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:11px 13px;font-size:15px;font-family:inherit;background:#fbfaf7;color:var(--ink)}
 .consult-form input:focus,.consult-form select:focus,.consult-form textarea:focus{outline:none;border-color:var(--gold);background:#fff}
 .consult-form textarea{resize:vertical}
