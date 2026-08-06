@@ -33,6 +33,9 @@ function page({ file, title, desc, body, hero = "", jsonld = null }) {
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(desc)}">
 <meta property="og:url" content="${url}">
+<meta property="og:image" content="${BASE_URL}/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta property="og:locale" content="ko_KR">
 <meta name="google-site-verification" content="VX3_rCXNNSHvHSQZHKBdGHgiPDfJ0M2wZ6wJtFcq_YU">
 <meta name="naver-site-verification" content="dbd104a111caeca5379e2fd4b5e27f55a5eec692">
