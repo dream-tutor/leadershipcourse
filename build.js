@@ -85,6 +85,19 @@ ${footer()}
   if(!fc || !consult || !('IntersectionObserver' in window)) return;
   new IntersectionObserver(function(en){ fc.classList.toggle('hide', en[0].isIntersecting); }).observe(consult);
 })();
+(function(){
+  function isFormEl(t){ return t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT'); }
+  document.addEventListener('contextmenu', function(e){ if(!isFormEl(e.target)) e.preventDefault(); }, true);
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'F12' || e.keyCode === 123 ||
+       ((e.ctrlKey || e.metaKey) && e.shiftKey && ['I','i','J','j','C','c'].indexOf(e.key) > -1) ||
+       ((e.ctrlKey || e.metaKey) && (e.key === 'u' || e.key === 'U'))){
+      e.preventDefault();
+    }
+  }, true);
+  document.addEventListener('dragstart', function(e){ e.preventDefault(); });
+  document.addEventListener('selectstart', function(e){ if(!isFormEl(e.target)) e.preventDefault(); });
+})();
 </script>
 </body>
 </html>`,
@@ -1319,6 +1332,9 @@ tbody tr:hover{background:var(--gold-pale)}
 .footer-regions a:hover{border-color:var(--gold);color:var(--gold)}
 .footer-cta{margin-top:6px;font-size:14px;padding:11px 22px}
 .footer-fine{margin-top:34px;padding-top:18px;border-top:1px solid rgba(255,255,255,.1);color:#71837a;font-size:12.5px}
+body{-webkit-user-select:none;-moz-user-select:none;user-select:none}
+input,textarea,select{-webkit-user-select:text;-moz-user-select:text;user-select:text}
+img{-webkit-user-drag:none;user-drag:none}
 `;
 
 // ------------------------------------------------------------
