@@ -215,7 +215,7 @@ function consultSection(preset = {}) {
     <form class="consult-form" id="consultForm" autocomplete="off">
       <div class="form-row two">
         <label><span class="cap">이름 <b>*</b></span><input type="text" name="이름" required placeholder="성함"></label>
-        <label><span class="cap">연락처 <b>*</b></span><input type="tel" name="연락처" required placeholder="010-0000-0000"></label>
+        <label><span class="cap">연락처 <b>*</b></span><div style="display:flex;gap:6px"><select name="연락처앞" style="flex:0 0 86px"><option value="010" selected>010</option><option value="011">011</option><option value="016">016</option><option value="017">017</option><option value="018">018</option><option value="019">019</option></select><input type="tel" name="연락처" required placeholder="1234-5678" style="flex:1;min-width:0"></div></label>
       </div>
       <div class="form-row two">
         <label><span class="cap">소속 · 직급 <b>*</b></span><input type="text" name="소속직급" required placeholder="예: 기업 대표 / OO전자 팀장 / 자영업"></label>
@@ -244,7 +244,7 @@ function consultSection(preset = {}) {
     form.addEventListener('submit', function(ev){
       ev.preventDefault();
       var f = new FormData(form);
-      var name = (f.get('이름')||'').trim(), tel = (function(v){v=String(v||'').replace(/\\D/g,'');return v.length===11?v.slice(0,3)+'-'+v.slice(3,7)+'-'+v.slice(7):v.length===10?v.slice(0,3)+'-'+v.slice(3,6)+'-'+v.slice(6):v;})((f.get('연락처')||'').trim());
+      var name = (f.get('이름')||'').trim(), tel = (function(p,v){v=String(v||'').replace(/\\D/g,'');return v.length===11?v.slice(0,3)+'-'+v.slice(3,7)+'-'+v.slice(7):v.length===10?v.slice(0,3)+'-'+v.slice(3,6)+'-'+v.slice(6):v.length===8?p+'-'+v.slice(0,4)+'-'+v.slice(4):v.length===7?p+'-'+v.slice(0,3)+'-'+v.slice(3):p+'-'+v;})((f.get('연락처앞')||'010'),(f.get('연락처')||'').trim());
       var org = (f.get('소속직급')||'').trim(), course = f.get('관심과정')||'', region = f.get('지역')||'';
       if(!name || !tel || !org || !course || !region){ alert('필수 항목을 모두 입력해 주세요.'); return; }
       var btn = form.querySelector('.form-submit');
