@@ -244,7 +244,7 @@ function consultSection(preset = {}) {
     form.addEventListener('submit', function(ev){
       ev.preventDefault();
       var f = new FormData(form);
-      var name = (f.get('이름')||'').trim(), tel = (f.get('연락처')||'').trim();
+      var name = (f.get('이름')||'').trim(), tel = (function(v){v=String(v||'').replace(/\\D/g,'');return v.length===11?v.slice(0,3)+'-'+v.slice(3,7)+'-'+v.slice(7):v.length===10?v.slice(0,3)+'-'+v.slice(3,6)+'-'+v.slice(6):v;})((f.get('연락처')||'').trim());
       var org = (f.get('소속직급')||'').trim(), course = f.get('관심과정')||'', region = f.get('지역')||'';
       if(!name || !tel || !org || !course || !region){ alert('필수 항목을 모두 입력해 주세요.'); return; }
       var btn = form.querySelector('.form-submit');
