@@ -218,7 +218,8 @@ function consultSection(preset = {}) {
         <label><span class="cap">연락처 <b>*</b></span><div style="display:flex;gap:6px"><select name="연락처앞" style="flex:0 0 44px;appearance:none;-webkit-appearance:none;text-align:center;text-align-last:center;padding:0"><option value="010" selected>010</option><option value="011">011</option><option value="016">016</option><option value="017">017</option><option value="018">018</option><option value="019">019</option></select><input type="tel" name="연락처" required placeholder="1234-5678" style="flex:1;min-width:0"></div></label>
       </div>
       <div class="form-row two">
-        <label><span class="cap">소속 · 직급 <b>*</b></span><input type="text" name="소속직급" required placeholder="예: 기업 대표 / OO전자 팀장 / 자영업"></label>
+        <label><span class="cap">소속 <b>*</b></span><input type="text" name="소속" required placeholder="예: OO전자 / 자영업"></label>
+        <label><span class="cap">직급</span><input type="text" name="직급" placeholder="예: 대표 / 팀장"></label>
       </div>
       <div class="form-row two">
         <label><span class="cap">문의 과정 <b>*</b></span><select name="관심과정" required><option value="">선택해 주세요</option>${courseOpts}<option value="기타 문의">기타 문의</option></select></label>
@@ -244,12 +245,14 @@ function consultSection(preset = {}) {
       ev.preventDefault();
       var f = new FormData(form);
       var name = (f.get('이름')||'').trim(), tel = (function(p,v){v=String(v||'').replace(/\\D/g,'');return v.length===11?v.slice(0,3)+'-'+v.slice(3,7)+'-'+v.slice(7):v.length===10?v.slice(0,3)+'-'+v.slice(3,6)+'-'+v.slice(6):v.length===8?p+'-'+v.slice(0,4)+'-'+v.slice(4):v.length===7?p+'-'+v.slice(0,3)+'-'+v.slice(3):p+'-'+v;})((f.get('연락처앞')||'010'),(f.get('연락처')||'').trim());
-      var org = (f.get('소속직급')||'').trim(), course = f.get('관심과정')||'', region = f.get('지역')||'';
+      var org = (f.get('소속')||'').trim(), rank = (f.get('직급')||'').trim(), course = f.get('관심과정')||'', region = f.get('지역')||'';
       if(!name || !tel || !org || !course || !region){ alert('필수 항목을 모두 입력해 주세요.'); return; }
       var btn = form.querySelector('.form-submit');
       btn.disabled = true; btn.textContent = '접수 중...';
       var data = {
-        '이름': name, '연락처': tel, '소속직급': f.get('소속직급')||'',
+        '이름': name, '연락처': tel, '소속': org, '직급': rank,
+        /* 구버전 GAS 호환용 — 아직 새 GAS를 배포하기 전이어도 소속이 시트에서 비지 않게 합친 값도 같이 보낸다 */
+        '소속직급': (org + (rank ? ' ' + rank : '')),
         '관심과정': f.get('관심과정')||'', '지역': f.get('지역')||'',
         '문의내용': f.get('문의내용')||'',
         '신청일': new Date().toLocaleString('ko-KR'),
