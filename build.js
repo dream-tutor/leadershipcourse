@@ -219,7 +219,6 @@ function consultSection(preset = {}) {
       </div>
       <div class="form-row two">
         <label><span class="cap">소속 · 직급 <b>*</b></span><input type="text" name="소속직급" required placeholder="예: 기업 대표 / OO전자 팀장 / 자영업"></label>
-        <label><span class="cap">연락 희망 시간</span><select name="연락희망시간"><option value="아무 때나">아무 때나</option><option>오전 (9시~12시)</option><option>오후 (12시~18시)</option><option>저녁 (18시 이후)</option></select></label>
       </div>
       <div class="form-row two">
         <label><span class="cap">문의 과정 <b>*</b></span><select name="관심과정" required><option value="">선택해 주세요</option>${courseOpts}<option value="기타 문의">기타 문의</option></select></label>
@@ -252,7 +251,7 @@ function consultSection(preset = {}) {
       var data = {
         '이름': name, '연락처': tel, '소속직급': f.get('소속직급')||'',
         '관심과정': f.get('관심과정')||'', '지역': f.get('지역')||'',
-        '연락희망시간': f.get('연락희망시간')||'', '문의내용': f.get('문의내용')||'',
+        '문의내용': f.get('문의내용')||'',
         '신청일': new Date().toLocaleString('ko-KR'),
         '유입페이지': location.href, '유입페이지제목': document.title,
         '유입경로': document.referrer || '직접입력'
