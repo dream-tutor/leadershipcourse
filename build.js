@@ -201,7 +201,11 @@ function consultSection(preset = {}) {
   const regionOpts = Object.entries(REGIONS)
     .map(([slug, r]) => `<option value="${r.name}"${preset.region === slug ? " selected" : ""}>${r.name}</option>`)
     .join("");
-  return `<section class="consult" id="consult">
+  // 상담 폼은 페이지 하단 고정 섹션이 아니라 팝업(모달)로 뜬다 — 상담 CTA(a[href$="#consult"]) 클릭 시 열림 (2026-08-24)
+  return `<div class="consult-ov" id="consultOv" hidden>
+  <div class="consult-box">
+  <button type="button" class="consult-x" aria-label="닫기">✕</button>
+  <section class="consult" id="consult">
   <div class="wrap consult-grid">
     <div class="consult-copy">
       <h2>상담 신청</h2>
@@ -268,8 +272,23 @@ function consultSection(preset = {}) {
       }, 700);
     });
   })();
+  (function(){
+    var ov = document.getElementById('consultOv');
+    if(!ov) return;
+    function open(){ ov.hidden = false; document.body.style.overflow = 'hidden'; }
+    function close(){ ov.hidden = true; document.body.style.overflow = ''; }
+    document.addEventListener('click', function(e){
+      if(!e.target.closest) return;
+      var a = e.target.closest('a[href$="#consult"]');
+      if(a){ e.preventDefault(); open(); return; }
+      if(e.target === ov || e.target.closest('.consult-x')) close();
+    });
+    document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && !ov.hidden) close(); });
+  })();
   </script>
-</section>`;
+</section>
+</div>
+</div>`;
 }
 
 // ------------------------------------------------------------
@@ -1301,6 +1320,13 @@ tbody tr:hover{background:var(--gold-pale)}
 .consult{background:linear-gradient(135deg,var(--green-dark),var(--green));color:#fff;padding:72px 0}
 .consult-grid{display:grid;grid-template-columns:1fr 1.15fr;gap:48px;align-items:start}
 @media(max-width:820px){.consult-grid{grid-template-columns:1fr;gap:32px}}
+.consult-ov{position:fixed;inset:0;z-index:200;background:rgba(10,16,26,.62);display:flex;align-items:center;justify-content:center;padding:16px}
+.consult-ov[hidden]{display:none}
+.consult-box{position:relative;width:100%;max-width:640px;max-height:92vh;overflow-y:auto;border-radius:20px;box-shadow:0 24px 70px rgba(0,0,0,.4)}
+.consult-x{position:absolute;top:10px;right:10px;z-index:2;width:34px;height:34px;border:0;border-radius:50%;background:rgba(255,255,255,.18);color:#fff;font-size:16px;cursor:pointer;line-height:1}
+.consult-x:hover{background:rgba(255,255,255,.32)}
+.consult-ov .consult{padding:36px 0 30px;border-radius:20px}
+.consult-ov .consult-grid{grid-template-columns:1fr;gap:24px}
 .consult-copy h2{font-size:clamp(24px,3.4vw,32px);font-weight:800;margin-bottom:14px}
 .consult-copy>p{color:#dfe9e2;margin-bottom:22px}
 .consult-points{list-style:none;display:grid;gap:10px}
