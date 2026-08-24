@@ -12,9 +12,11 @@
  *  3) 남은 메일 할당량을 함께 기록
  *
  * 2026-08-20 폼 변경 — '소속·직급' 한 칸을 '소속' / '직급' 두 칸으로 분리
- *  ★ 시트에도 열을 하나 늘려야 합니다: E열(현재 '문의과정') 머리글 우클릭 →
- *    '왼쪽에 열 1개 삽입' → 1행 헤더에 '직급' 입력 (D열 헤더는 '소속'으로 수정).
- *    열을 안 늘리면 새 접수부터 직급 뒤 값이 한 칸씩 밀려 들어갑니다.
+ *
+ * 2026-08-21 개정 — 시트 기록 방식을 '열 순서'에서 '헤더 이름'으로 변경
+ *  시트 1행의 이름을 읽어 그 칸에 넣습니다. 열을 지우거나 순서를 바꿔도 값이 밀리지 않고,
+ *  시트에 없는 항목은 헤더를 새로 만들어 뒤에 붙입니다. 열 작업 전후로 순서를 맞출 필요 없음.
+ *  '연락희망시간'은 폼에서 뺐으므로 더 이상 보내지 않습니다 — 시트의 그 열은 지우셔도 됩니다.
  *
  * ※ 테스트는 브라우저에서 직접 폼 제출로 할 것 (curl -X POST 금지 — GET 방식 접수)
  */
@@ -26,6 +28,33 @@
 // └───────────────────────────────────────────────────────────────────────┘
 var SHEET_ID = "여기에_시트_ID_또는_URL_붙여넣기";
 var ALERT_TO = "zskykr@naver.com";
+
+// ── 시트 기록: 1행(헤더)을 읽어 그 이름에 맞는 칸에 넣는다 ─────────────────
+// 열을 지우거나 순서를 바꿔도 값이 밀리지 않는다. 시트에 자리가 없는 항목은
+// 헤더를 새로 만들어 맨 뒤에 붙인다 (값을 잃지 않기 위해).
+var 열별칭 = { "문의과정": ["관심과정", "과정"], "문의지역": ["지역"], "소속": ["소속직급"] };
+function 시트에기록(sh, 값) {
+  var headers = sh.getRange(1, 1, 1, Math.max(1, sh.getLastColumn())).getValues()[0]
+    .map(function (h) { return String(h).trim(); });
+  var 남은 = {};
+  Object.keys(값).forEach(function (k) { 남은[k] = true; });
+  var out = [];
+  for (var i = 0; i < headers.length; i++) {
+    var h = headers[i], hit = "";
+    if (값.hasOwnProperty(h)) hit = h;
+    else Object.keys(열별칭).forEach(function (k) {
+      if (!hit && 열별칭[k].indexOf(h) > -1 && 값.hasOwnProperty(k)) hit = k;
+    });
+    out.push(hit ? 값[hit] : "");
+    if (hit) delete 남은[hit];
+  }
+  Object.keys(남은).forEach(function (k) {
+    headers.push(k);
+    sh.getRange(1, headers.length).setValue(k);
+    out.push(값[k]);
+  });
+  sh.appendRow(out);
+}
 
 function doGet(e) {
   var p = (e && e.parameter) || {};
@@ -73,21 +102,20 @@ function doGet(e) {
 
   if (!sh) return ContentService.createTextOutput("OK (sheet error: " + sheetErr + ")");
 
-  sh.appendRow([
-    Utilities.formatDate(new Date(), "Asia/Seoul", "M/d HH:mm"),
-    name,
-    tel,
-    org,
-    rank,
-    p["관심과정"] || "",
-    p["지역"] || "",
-    p["연락희망시간"] || "",
-    p["문의내용"] || "",
-    p["유입페이지"] || "",
-    p["유입페이지제목"] || "",
-    p["유입경로"] || "",
-    mailNote,
-  ]);
+  시트에기록(sh, {
+    "접수시각": Utilities.formatDate(new Date(), "Asia/Seoul", "M/d HH:mm"),
+    "이름": name,
+    "연락처": tel,
+    "소속": org,
+    "직급": rank,
+    "문의과정": p["관심과정"] || "",
+    "문의지역": p["지역"] || "",
+    "문의내용": p["문의내용"] || "",
+    "유입페이지": p["유입페이지"] || "",
+    "유입페이지제목": p["유입페이지제목"] || "",
+    "유입경로": p["유입경로"] || "",
+    "메일알림": mailNote,
+  });
   return ContentService.createTextOutput("OK");
 }
 
