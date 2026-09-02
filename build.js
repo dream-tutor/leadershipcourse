@@ -15,12 +15,113 @@ const fee = (v) => (v == null ? "미정" : v.toLocaleString("ko-KR") + "원");
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 // ------------------------------------------------------------
+// 페이지 날짜 — 파일명 시드 기반, 월 단위로만 변동 (주간 랜덤 회전 없음)
+//   dateModified: 이번 달 안의 시드 고정 날짜(1~28일). 아직 오지 않은 날이면 지난달 같은 날.
+//   datePublished: 시드로 2026-07-20 ~ 2026-08-31 사이에 분산 고정.
+// ------------------------------------------------------------
+const SITE_LAUNCH_EPOCH = Date.UTC(2026, 6, 20); // 2026-07-20
+const LAUNCH_SPAN_DAYS = 43;                     // ~ 2026-08-31
+function seedHash(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+function pageDates(seed) {
+  const h = seedHash(String(seed));
+  const h2 = seedHash("m:" + String(seed));
+  const published = new Date(SITE_LAUNCH_EPOCH + (h % LAUNCH_SPAN_DAYS) * 86400000);
+  const nowKst = new Date(Date.now() + 9 * 3600 * 1000);
+  const y = nowKst.getUTCFullYear();
+  const m = nowKst.getUTCMonth();
+  const dayOff = h2 % 28;
+  let modified = new Date(Date.UTC(y, m, 1 + dayOff));
+  if (modified.getTime() > nowKst.getTime()) modified = new Date(Date.UTC(y, m - 1, 1 + dayOff));
+  if (modified.getTime() < published.getTime()) modified = published;
+  return {
+    dateModified: modified.toISOString().split("T")[0],
+    datePublished: published.toISOString().split("T")[0],
+  };
+}
+
+// ------------------------------------------------------------
+// 브레드크럼 — 파일명으로 상위 경로 유도 (호출부에서 crumbs로 직접 넘겨도 됨)
+//   guide-*          → 홈 › 리더십 칼럼 › 글
+//   {course}.html    → 홈 › 과정 안내 › 과정
+//   {region}.html    → 홈 › 지역별 안내 › 지역
+//   {region}-{course}→ 홈 › 지역별 안내 › 지역 › 지역 과정
+//   그 외(about 등)   → 홈 › 페이지
+// ------------------------------------------------------------
+function crumbsFor(file, title) {
+  const cur = String(title).split(" | ")[0].trim();
+  const base = file.replace(/\.html$/, "");
+  const t = [{ label: "홈", href: "index.html" }];
+  const course = Object.values(COURSES).find((c) => c.slug === base);
+  if (base.startsWith("guide-")) {
+    t.push({ label: "리더십 칼럼", href: "guide.html" });
+  } else if (course) {
+    t.push({ label: "과정 안내", href: "index.html#courses" });
+  } else if (REGIONS[base]) {
+    t.push({ label: "지역별 안내", href: "index.html#regions" });
+  } else {
+    const i = base.lastIndexOf("-");
+    const rs = base.slice(0, i);
+    const ck = base.slice(i + 1);
+    if (i > 0 && REGIONS[rs] && Object.values(COURSES).some((c) => c.slug === ck)) {
+      t.push({ label: "지역별 안내", href: "index.html#regions" });
+      t.push({ label: REGIONS[rs].name, href: `${rs}.html` });
+    }
+  }
+  t.push({ label: cur });
+  return t;
+}
+const absUrl = (href) => `${BASE_URL}/${href === "index.html" ? "" : href.replace(/^index\.html/, "")}`;
+function crumbsHtml(trail, dateLabel) {
+  const items = trail
+    .map((c, i) => (i === trail.length - 1 ? `<li aria-current="page">${esc(c.label)}</li>` : `<li><a href="${c.href}">${esc(c.label)}</a></li>`))
+    .join("");
+  return `<nav class="crumbs" aria-label="현재 위치"><div class="wrap"><ol>${items}</ol><span class="crumbs-date">정보 업데이트 ${dateLabel}</span></div></nav>`;
+}
+function crumbsJsonld(trail, pageUrl) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: trail.map((c, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: c.label,
+      item: c.href ? absUrl(c.href) : pageUrl,
+    })),
+  };
+}
+
+// ------------------------------------------------------------
 // 공통 레이아웃
 // ------------------------------------------------------------
-function page({ file, title, desc, body, hero = "", jsonld = null }) {
+function page({ file, title, desc, body, hero = "", jsonld = null, crumbs = null }) {
   const url = `${BASE_URL}/${file === "index.html" ? "" : file}`;
+  const isHome = file === "index.html";
+
+  // 날짜: 기존 JSON-LD에 실제 발행일(칼럼 Article 등)이 있으면 그 값을 우선
+  const dates = pageDates(file);
+  const published = jsonld && !Array.isArray(jsonld) && typeof jsonld.datePublished === "string" ? jsonld.datePublished : dates.datePublished;
+  const modified = dates.dateModified < published ? published : dates.dateModified;
+  const dateLabel = modified.replace(/-/g, ".");
+
+  // JSON-LD: 기존 객체에 날짜 추가(Organization 제외) → 없으면 WebPage 추가, 브레드크럼은 별도 블록
+  const datable = jsonld && !Array.isArray(jsonld) && jsonld["@type"] !== "Organization";
+  const ld = [];
+  if (jsonld) ld.push(datable ? { ...jsonld, datePublished: published, dateModified: modified } : jsonld);
+  if (!datable) ld.push({ "@context": "https://schema.org", "@type": "WebPage", name: title, description: desc, url, datePublished: published, dateModified: modified, inLanguage: "ko-KR" });
+  const trail = isHome ? null : crumbs || crumbsFor(file, title);
+  if (trail && trail.length > 1) ld.push(crumbsJsonld(trail, url));
+  const ldScripts = ld.map((o) => `<script type="application/ld+json">${JSON.stringify(o)}</script>`).join("\n");
+
+  const crumbsBlock = trail && trail.length > 1 ? crumbsHtml(trail, dateLabel) : "";
+  const homeDate = isHome ? `<p class="page-date wrap">정보 업데이트 ${dateLabel}</p>` : "";
+
   return {
     file,
+    lastmod: modified,
     html: `<!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -37,12 +138,14 @@ function page({ file, title, desc, body, hero = "", jsonld = null }) {
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:locale" content="ko_KR">
+<meta property="article:published_time" content="${published}T00:00:00+09:00">
+<meta property="article:modified_time" content="${modified}T00:00:00+09:00">
 <meta name="google-site-verification" content="VX3_rCXNNSHvHSQZHKBdGHgiPDfJ0M2wZ6wJtFcq_YU">
 <meta name="naver-site-verification" content="dbd104a111caeca5379e2fd4b5e27f55a5eec692">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230c3b2e'/%3E%3Ctext x='32' y='45' font-size='34' font-weight='bold' text-anchor='middle' fill='%23c6a15b' font-family='Arial'%3EC%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="style.css?v=${CSS_VER}">
-${jsonld ? `<script type="application/ld+json">${JSON.stringify(jsonld)}</script>` : ""}
+${ldScripts}
 </head>
 <body>
 <header class="site-header">
@@ -73,7 +176,9 @@ ${jsonld ? `<script type="application/ld+json">${JSON.stringify(jsonld)}</script
 </header>
 ${hero}
 <main>
+${crumbsBlock}
 ${body}
+${homeDate}
 </main>
 ${footer()}
 <a class="float-cta" href="#consult">상담 신청</a>
@@ -1177,6 +1282,17 @@ a{color:inherit;text-decoration:none}
 .sec-sub a{color:var(--green);font-weight:700;text-decoration:underline}
 .lead{font-size:17px;color:#33403a;margin-bottom:28px}
 
+/* breadcrumbs · 업데이트 표기 */
+.crumbs{font-size:13px;color:var(--muted);padding:14px 0 0}
+.crumbs .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px 16px}
+.crumbs ol{list-style:none;display:flex;flex-wrap:wrap;align-items:center;margin:0;padding:0}
+.crumbs li+li::before{content:"›";margin:0 7px;color:#a7b0ab}
+.crumbs a{color:var(--muted)}
+.crumbs a:hover{color:var(--green);text-decoration:underline;text-underline-offset:3px}
+.crumbs [aria-current]{color:var(--ink);font-weight:600}
+.crumbs-date,.page-date{font-size:12.5px;color:#8a948e;white-space:nowrap}
+.page-date{text-align:right;padding:0 22px 18px}
+
 /* why */
 .why-list{list-style:none;display:grid;gap:12px;margin-top:26px}
 .why-list li{display:flex;gap:18px;align-items:flex-start;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 22px}
@@ -1388,7 +1504,7 @@ fs.mkdirSync(assetsDst, { recursive: true });
 for (const f of fs.readdirSync(assetsSrc)) fs.copyFileSync(path.join(assetsSrc, f), path.join(assetsDst, f));
 
 // sitemap + robots
-const urls = pages.map((p) => `<url><loc>${BASE_URL}/${p.file === "index.html" ? "" : p.file}</loc></url>`).join("\n");
+const urls = pages.map((p) => `<url><loc>${BASE_URL}/${p.file === "index.html" ? "" : p.file}</loc><lastmod>${p.lastmod}</lastmod></url>`).join("\n");
 fs.writeFileSync(path.join(OUT, "sitemap.xml"), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>`);
 fs.writeFileSync(path.join(OUT, "robots.txt"), `User-agent: *\nAllow: /\nSitemap: ${BASE_URL}/sitemap.xml`);
 fs.writeFileSync(path.join(OUT, "CNAME"), BASE_URL.replace(/^https?:\/\//, ""));

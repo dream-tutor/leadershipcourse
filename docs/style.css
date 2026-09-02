@@ -75,6 +75,17 @@ a{color:inherit;text-decoration:none}
 .sec-sub a{color:var(--green);font-weight:700;text-decoration:underline}
 .lead{font-size:17px;color:#33403a;margin-bottom:28px}
 
+/* breadcrumbs · 업데이트 표기 */
+.crumbs{font-size:13px;color:var(--muted);padding:14px 0 0}
+.crumbs .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px 16px}
+.crumbs ol{list-style:none;display:flex;flex-wrap:wrap;align-items:center;margin:0;padding:0}
+.crumbs li+li::before{content:"›";margin:0 7px;color:#a7b0ab}
+.crumbs a{color:var(--muted)}
+.crumbs a:hover{color:var(--green);text-decoration:underline;text-underline-offset:3px}
+.crumbs [aria-current]{color:var(--ink);font-weight:600}
+.crumbs-date,.page-date{font-size:12.5px;color:#8a948e;white-space:nowrap}
+.page-date{text-align:right;padding:0 22px 18px}
+
 /* why */
 .why-list{list-style:none;display:grid;gap:12px;margin-top:26px}
 .why-list li{display:flex;gap:18px;align-items:flex-start;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 22px}
