@@ -623,7 +623,7 @@ function alumniTableHtml() {
   return `<section class="section" id="alumni">
   <div class="wrap">
     <h2 class="sec-title">수료 후에도 이어지는 지역별 동문 활동</h2>
-    <p class="sec-sub">최고경영자 코스는 12주로 끝나지 않습니다. 각 지역 수료 동문들이 총동문회를 중심으로 골프회·산악회·독서클럽 등 정기 모임을 직접 운영하고 있습니다. 아래는 지사별로 취합한 현재 활동 중인 동문 모임입니다.</p>
+    <p class="sec-sub">12주가 끝나도 만남은 계속됩니다. 지역마다 수료 동문들이 총동문회를 중심으로 골프·산행·독서 같은 정기 모임을 스스로 꾸려 가고 있습니다. 아래는 지사별로 모은 현재 운영 중인 동문 모임입니다.</p>
     <div class="table-wrap"><table class="curri alumni-table">
       <thead><tr><th>지사</th><th>지역</th><th>동문 활동</th></tr></thead>
       <tbody>${rows}</tbody>
@@ -658,7 +658,7 @@ function ceoIntroExtra() {
   return `<section class="section alt">
   <div class="wrap">
     <h2 class="sec-title">경영의 가장 어려운 숙제는 결국 '사람'입니다</h2>
-    <p class="sec-sub">사업을 성장시키는 일도 어렵지만, 사람의 마음을 얻고 조직을 움직이는 일은 더 어렵습니다. 최고경영자 코스는 인간관계가 삶의 질을 좌우하듯 '인간경영리더십'이 경영 성과를 좌우한다는 전제에서 출발합니다.</p>
+    <p class="sec-sub">매출을 키우는 것도 어렵지만, 사람의 마음을 얻어 조직이 스스로 움직이게 하는 일은 훨씬 어렵습니다. 최고경영자 코스는 관계가 삶의 질을 정하듯 사람을 다루는 리더십이 경영의 성과를 정한다는 생각에서 출발합니다.</p>
     <div class="cycle-grid three">
       ${CC.HARDEST_THREE.map(([t, d], i) => `<div><span>0${i + 1}</span><strong>${t}</strong><p>${d}</p></div>`).join("")}
     </div>
@@ -685,7 +685,7 @@ function ceoFourHtml() {
   return `<section class="section alt">
   <div class="wrap">
     <h2 class="sec-title">인간경영을 통한 성과경영</h2>
-    <p class="sec-sub">"CEO는 다음 네 가지를 항상 생각합니다." — Why, What, How, Performance. 태도에서 출발해 지식과 연습을 거쳐 기술과 습관으로 남는 자기개발 사이클입니다.</p>
+    <p class="sec-sub">경영자가 늘 붙들고 있는 네 가지 질문, 왜(Why)·무엇을(What)·어떻게(How)·성과(Performance). 태도에서 시작해 지식과 연습을 지나 몸에 밴 기술로 남는 순서가 이 과정의 뼈대입니다.</p>
     <div class="cycle-grid">
       ${CC.CEO_FOUR.map((f, i) => `<div><span>0${i + 1} · ${f.k}</span><strong>${f.t}</strong><p>"${f.q}"</p><p class="by">— ${f.by}</p></div>`).join("")}
     </div>
@@ -693,7 +693,7 @@ function ceoFourHtml() {
     <ol class="step-list">
       ${CC.LEADERSHIP_4.map(([t, d]) => `<li><strong>${t}</strong> — ${d}</li>`).join("")}
     </ol>
-    <p class="sec-sub" style="margin-top:18px">당신의 리더십은 지금 어느 단계에 있습니까?</p>
+    <p class="sec-sub" style="margin-top:18px">지금 나의 리더십은 몇 번째 계단에 서 있을까요?</p>
   </div>
 </section>`;
 }
@@ -764,15 +764,15 @@ function regionChangesHtml(r) {
     <div>
       <h2 class="sec-title-sm">${r.name} 최고경영자 코스에서 만나는 다섯 가지 변화</h2>
       <ol class="step-list">${CC.FIVE_CHANGES.map((t) => `<li>${t}</li>`).join("")}</ol>
-      <p class="sec-sub" style="margin-top:14px;margin-bottom:0">수료 후에도 총동문회 활동과 성장의 기회는 계속됩니다.</p>
+      <p class="sec-sub" style="margin-top:14px;margin-bottom:0">수료가 끝이 아닙니다. 총동문회를 통해 배움과 만남이 이어집니다.</p>
     </div>
     <div>
-      <h2 class="sec-title-sm">듣는 교육을 넘어, 행동이 달라지는 훈련입니다</h2>
-      <p style="margin-bottom:14px">데일카네기 CEO 과정은 참여와 실천, 피드백을 통해 자신의 리더십을 실제 행동으로 변화시키는 과정입니다.</p>
+      <h2 class="sec-title-sm">듣고 끝나는 교육이 아니라, 행동이 바뀌는 훈련입니다</h2>
+      <p style="margin-bottom:14px">이 과정은 참여하고, 실천하고, 피드백을 받는 12주를 통해 리더십을 아는 것에서 하는 것으로 옮겨 놓습니다.</p>
       <div class="cycle-grid three action-three">
         ${CC.ACTION_THREE.map(([t, d], i) => `<div><span>0${i + 1}</span><strong>${t}</strong><p>${d}</p></div>`).join("")}
       </div>
-      <p class="sec-sub" style="margin-top:16px;margin-bottom:0"><strong>"조금 더 여유가 생기면 해야지."</strong> 그러나 리더에게 완벽하게 여유로운 때는 좀처럼 찾아오지 않습니다. 바쁘기 때문에 배워야 하고, 책임이 크기 때문에 지금 성장해야 합니다. 이번 12주의 선택이 앞으로의 10년을 이끄는 리더십의 전환점이 될 수 있습니다.</p>
+      <p class="sec-sub" style="margin-top:16px;margin-bottom:0"><strong>"좀 한가해지면 그때 하지."</strong> 대표에게 그런 때는 잘 오지 않습니다. 바쁘니까 배워야 하고, 책임이 무거우니까 지금 자라야 합니다. 이번 12주가 다음 10년의 리더십을 바꾸는 갈림길이 될 수 있습니다.</p>
     </div>
   </div>
 </section>`;
@@ -799,7 +799,7 @@ function hanamRecoHtml() {
   <div class="wrap">
     <p class="hero-kicker" style="color:var(--gold)">광주하남 수료생 추천서</p>
     <h2 class="sec-title">"${h.headline}"</h2>
-    <p class="sec-sub">${h.sub}. 수많은 교육을 이수해 봤지만, 데일카네기 교육은 단연코 달랐습니다.</p>
+    <p class="sec-sub">${h.sub}. 앞 기수 수료생이 다음 기수에게 남긴 글입니다.</p>
     <ul class="check-list gold" style="margin-bottom:34px">${h.intro.map((t) => `<li>${t}</li>`).join("")}</ul>
     <div class="two-col">
       <div>
