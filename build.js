@@ -257,7 +257,9 @@ function why5Html() {
 }
 
 function scheduleTable(rows, { linkRegion = true } = {}) {
+  // 개강일 순 정렬 (같은 날짜면 데이터 순서 유지)
   const tr = rows
+    .slice().sort((x, y) => x.open.localeCompare(y.open))
     .map((r) => {
       const reg = REGIONS[r.region];
       const name = linkRegion ? `<a href="${r.region}.html">${r.name}</a>` : r.name;
@@ -403,16 +405,39 @@ function consultSection(preset = {}) {
 // 홈
 // ------------------------------------------------------------
 function buildIndex() {
-  const courseCards = ["ceo", "dcc", "dcs", "lac", "ltm", "dylp", "hip", "youth"]
+  // 대표 과정: CEO(1순위) · DCC(2순위) — 모집 현황을 함께 표시
+  const featuredCards = ["ceo", "dcc"]
     .map((k) => {
       const c = COURSES[k];
-      return `<a class="course-card" href="${c.slug}.html">
+      const rows = SCHEDULE.filter((x) => x.course === k);
+      const regionNames = [...new Set(rows.map((x) => REGIONS[x.region].name))];
+      const next = rows.slice().sort((a, b) => a.open.localeCompare(b.open))[0];
+      const stat = !rows.length
+        ? "개강 일정은 문의 시 안내"
+        : k === "ceo"
+          ? `전국 ${regionNames.length}개 지역 · ${rows.length}개 기수 모집 중`
+          : `${regionNames.join("·")} ${rows.length}개 기수 모집 중`;
+      const label = k === "ceo" ? "경영자 · 임원을 위한 대표 과정" : "모든 성인을 위한 원조 프로그램";
+      return `<a class="course-card featured" href="${c.slug}.html">
         <span class="course-code">${c.code}</span>
+        <p class="course-label">${label}</p>
         <h3>${c.name}</h3>
         <p class="course-tag">${c.tag}</p>
         <p class="course-short">${c.short}</p>
         <span class="course-meta">${c.duration}</span>
+        <span class="course-stat">${stat}${next ? ` · 가장 빠른 개강 ${next.open}` : ""}</span>
         <span class="course-more">자세히 보기 →</span>
+      </a>`;
+    })
+    .join("\n");
+  const compactCards = ["dcs", "lac", "ltm", "dylp", "hip", "youth"]
+    .map((k) => {
+      const c = COURSES[k];
+      return `<a class="course-card compact" href="${c.slug}.html">
+        <span class="course-code">${c.code}</span>
+        <h3>${c.name}</h3>
+        <p class="course-short">${c.tag}</p>
+        <span class="course-meta">${c.duration}</span>
       </a>`;
     })
     .join("\n");
@@ -447,8 +472,10 @@ ${why5Html()}
 <section class="section" id="courses">
   <div class="wrap">
     <h2 class="sec-title">데일카네기 공개과정 라인업</h2>
-    <p class="sec-sub">경영자부터 신임리더, 세일즈, 프레젠테이션, 청소년까지 — 필요한 역량에 맞는 과정을 선택하세요.</p>
-    <div class="course-grid">${courseCards}</div>
+    <p class="sec-sub">경영자를 위한 최고경영자 코스와 모든 성인을 위한 데일카네기 코스(DCC)가 대표 과정입니다. 세일즈·리더십·프레젠테이션·청소년 과정도 함께 운영합니다.</p>
+    <div class="course-grid">${featuredCards}</div>
+    <h3 class="sec-title-sm" style="margin-top:36px">그 외 공개과정</h3>
+    <div class="course-grid compact">${compactCards}</div>
   </div>
 </section>
 
@@ -1066,6 +1093,72 @@ ${consultSection({ course: key })}`;
 // ------------------------------------------------------------
 // 지역 페이지
 // ------------------------------------------------------------
+// 지역 모집 과정 카드 (CEO 우선, 이어서 DCC, 나머지)
+const COURSE_ORDER = ["ceo", "dcc", "dcs", "lac", "ltm", "dylp", "hip", "youth", "tla"];
+function regionOffersHtml(slug, rows) {
+  const r = REGIONS[slug];
+  if (!rows.length) {
+    return `<section class="section" id="offers">
+  <div class="wrap narrow">
+    <h2 class="sec-title">${r.name} ${YEAR_LABEL} 모집 중인 과정</h2>
+    <p class="sec-sub">현재 ${r.name} 지역에서 접수 중인 기수가 없습니다. 다음 기수 개설 소식은 하단 상담 신청을 남겨 주시면 가장 먼저 안내드립니다.
+    아래 과정별 안내에서 ${r.name} 과정 소개와 전국 개강 일정을 확인하실 수 있습니다.</p>
+  </div>
+</section>`;
+  }
+  const sorted = rows.slice().sort((a, b) => COURSE_ORDER.indexOf(a.course) - COURSE_ORDER.indexOf(b.course) || a.open.localeCompare(b.open));
+  let ceoSeen = false;
+  const cards = sorted.map((x) => {
+    const c = COURSES[x.course] || { code: x.course.toUpperCase(), name: x.name, slug: x.course };
+    const isMainCeo = x.course === "ceo" && !x.variant && !ceoSeen;
+    if (isMainCeo) ceoSeen = true;
+    const href = isMainCeo ? "#ceo-info" : x.course === "ceo" ? "ceo.html" : COMBO_COURSES.includes(x.course) ? comboFile(slug, x.course) : `${c.slug}.html`;
+    const title = x.variant ? `${c.name} · ${x.variant}` : c.name;
+    const badge = x.course === "ceo" ? "경영자 과정" : x.course === "dcc" ? "모든 성인 대상" : "";
+    return `<a class="offer-card${x.course === "ceo" ? " primary" : ""}" href="${href}">
+      <div class="offer-head"><span class="course-code">${c.code}</span>${badge ? `<span class="offer-badge">${badge}</span>` : ""}</div>
+      <h3>${title} ${x.gi ? `<span class="gi">${x.gi}기</span>` : ""}</h3>
+      <dl class="offer-meta">
+        <div><dt>일정</dt><dd>${x.open} 개강 ~ ${x.close} 수료 (${x.weeks})</dd></div>
+        <div><dt>요일</dt><dd>매주 ${x.day}${x.time ? " " + x.time : ""}</dd></div>
+        <div><dt>수강료</dt><dd>${fee(x.fee)}</dd></div>
+      </dl>
+      <span class="course-more">${isMainCeo ? "모집 안내 보기" : "과정 안내 보기"} →</span>
+    </a>`;
+  }).join("\n");
+  const kinds = [...new Set(sorted.map((x) => x.course))].length;
+  return `<section class="section" id="offers">
+  <div class="wrap">
+    <h2 class="sec-title">${r.name} ${YEAR_LABEL} 모집 중인 과정</h2>
+    <p class="sec-sub">${kinds > 1 ? `${r.name}에서는 ${kinds}개 과정 ${sorted.length}개 기수가 접수 중입니다. 카드를 누르면 과정별 안내로 이동합니다.` : `${r.name}에서 현재 접수 중인 기수입니다. 접수는 교육 시작 일주일 전까지이며 조기 마감될 수 있습니다.`}</p>
+    <div class="offer-grid">${cards}</div>
+  </div>
+</section>`;
+}
+
+// DCC 개강이 없는 지역: 데일카네기 코스 소개 + 전국 DCC 일정
+function dccIntroHtml(slug) {
+  const r = REGIONS[slug];
+  const b = BRANCH[r.branch];
+  const dccRows = SCHEDULE.filter((x) => x.course === "dcc");
+  return `<section class="section alt" id="dcc-intro">
+  <div class="wrap narrow">
+    <p class="hero-kicker" style="color:var(--gold)">DCC · The Dale Carnegie Course</p>
+    <h2 class="sec-title">경영자가 아니어도 참여할 수 있는 데일카네기 코스</h2>
+    <p>최고경영자 코스가 경영자와 임원을 위한 과정이라면, 데일카네기 코스(DCC)는 직급과 업종에 관계없이 모든 성인이 참여하는 데일카네기의 원조 프로그램입니다.
+    1912년 이래 전 세계 900만 명이 거친 이 과정은 매주 3.5시간, 8주 동안 자신감·인간관계·커뮤니케이션·스트레스 관리·리더십을 실습으로 훈련합니다.
+    임직원·가족의 참여나 기업 단위 교육을 고민하시는 ${r.name} 경영자분들께 함께 안내드리는 과정입니다.</p>
+    <ul class="check-list" style="margin-top:14px">
+      <li>대상: 성과 향상과 리더십 역량 증진을 원하는 모든 성인</li>
+      <li>구성: 주 1회(3.5시간) × 8주 — 매주 도전 과제를 수행하며 변화를 체감하는 실습형 과정</li>
+      <li>${r.name} 개설: 현재 공개과정 일정은 아래 지역에서 운영 중이며, 기업·단체 단위 ${r.name} 맞춤 개설은 ${b.label}(${b.tel})로 문의하실 수 있습니다</li>
+    </ul>
+    ${dccRows.length ? `<h3 class="sec-title-sm" style="margin-top:26px">현재 접수 중인 데일카네기 코스 일정</h3>${scheduleTable(dccRows)}` : ""}
+    <p class="sec-sub" style="margin-top:14px"><a href="${comboFile(slug, "dcc")}">${r.name} 데일카네기 코스 안내 →</a> · <a href="dcc.html">DCC 과정 상세(커리큘럼·기대 효과) →</a></p>
+  </div>
+</section>`;
+}
+
 function buildRegion(slug) {
   const r = REGIONS[slug];
   const b = BRANCH[r.branch];
@@ -1073,20 +1166,28 @@ function buildRegion(slug) {
   const ceoRows = rows.filter((s) => s.course === "ceo");
   const mainCeo = ceoRows[0];
 
-  const heroTitle = mainCeo
+  const courseKinds = [...new Set(rows.map((s) => s.course))];
+  const multi = courseKinds.length > 1;
+  const heroTitle = mainCeo && !multi
     ? `${r.name} 데일카네기 <br>최고경영자 코스 <span class="gi">${mainCeo.gi ? mainCeo.gi + "기" : "신규"}</span>`
-    : `${r.name} 데일카네기 과정 안내`;
+    : multi
+      ? `${r.name} 데일카네기 <br>${YEAR_LABEL} 공개과정 <span class="gi">${courseKinds.length}개 과정 모집</span>`
+      : `${r.name} 데일카네기 과정 안내`;
+  const heroSub = multi
+    ? `최고경영자 코스${mainCeo && mainCeo.gi ? " " + mainCeo.gi + "기" : ""} · ${courseKinds.filter((k) => k !== "ceo").map((k) => (COURSES[k] ? COURSES[k].name : k.toUpperCase())).join(" · ")}`
+    : "관계 증진 · 협력 창출 · 리더십 발휘";
+  const hasDcc = courseKinds.includes("dcc");
 
   const hero = `<section class="hero hero-region">
   <div class="wrap hero-inner">
     <p class="hero-kicker">Since 1992 · ${r.name} 개설 과정 안내</p>
     <h1>${heroTitle}</h1>
-    <p class="hero-sub">관계 증진 · 협력 창출 · 리더십 발휘</p>
+    <p class="hero-sub">${heroSub}</p>
   </div>
 </section>`;
 
   const infoRows = mainCeo
-    ? `<section class="section">
+    ? `<section class="section alt" id="ceo-info">
   <div class="wrap narrow">
     <h2 class="sec-title">${r.name} 최고경영자 코스 ${mainCeo.gi ? mainCeo.gi + "기" : ""} 모집 안내</h2>
     <dl class="info-list">
@@ -1103,19 +1204,19 @@ function buildRegion(slug) {
     : "";
 
   const body = `
+${regionOffersHtml(slug, rows)}
+
 ${infoRows}
 
-${rows.length ? `<section class="section alt">
+${rows.length > 1 ? `<section class="section">
   <div class="wrap">
-    <h2 class="sec-title">${r.name} ${YEAR_LABEL} 개설 과정</h2>
+    <h2 class="sec-title-sm">${r.name} ${YEAR_LABEL} 개설 과정 한눈에 보기</h2>
     ${scheduleTable(rows.map((x) => ({ ...x })), { linkRegion: false })}
-    <p class="sec-sub" style="margin-top:14px">과정 상세:
-      ${[...new Set(rows.map((x) => x.course))].map((k) => `<a href="${COURSES[k].slug}.html">${COURSES[k].name}</a>`).join(" · ")}
-    </p>
   </div>
-</section>` : ""}
+</section>`
+    : ""}
 
-<section class="section">
+<section class="section${rows.length > 1 ? " alt" : ""}">
   <div class="wrap">
     <h2 class="sec-title-sm">${r.name} 과정별 안내</h2>
     <div class="chip-grid">
@@ -1138,6 +1239,8 @@ ${rows.length ? `<section class="section alt">
     <p class="sec-sub" style="margin-top:16px">관련 글: <a href="guide-ceo-network.html">CEO에게 좋은 모임이 필요한 진짜 이유</a> · <a href="ceo.html#alumni">전국 지역별 동문 활동 보기</a></p>
   </div>
 </section>
+
+${hasDcc ? "" : dccIntroHtml(slug)}
 
 ${why5Html()}
 
@@ -1553,6 +1656,31 @@ a{color:inherit;text-decoration:none}
 .course-short{font-size:14px;color:var(--muted);flex:1}
 .course-meta{font-size:13px;color:#8a948e}
 .course-more{font-size:14px;font-weight:700;color:var(--green)}
+.course-card.featured{border-width:2px;border-color:var(--gold-soft);background:linear-gradient(180deg,#fffdf8 0%,#fff 60%)}
+.course-card.featured h3{font-size:22px}
+.course-label{font-size:12.5px;font-weight:800;color:var(--green);letter-spacing:.04em}
+.course-stat{font-size:13.5px;font-weight:700;color:var(--green-dark);background:var(--gold-pale);border-radius:8px;padding:7px 10px;width:fit-content}
+.course-grid.compact{grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:900px){.course-grid.compact{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.course-grid.compact{grid-template-columns:1fr}}
+.course-card.compact{padding:18px 20px;gap:6px}
+.course-card.compact h3{font-size:16px}
+.course-card.compact .course-short{font-size:13px}
+/* 지역 모집 과정 카드 */
+.offer-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:900px){.offer-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.offer-grid{grid-template-columns:1fr}}
+.offer-card{display:flex;flex-direction:column;gap:10px;border:1px solid var(--line);border-radius:16px;padding:22px;background:#fff;transition:.15s}
+.offer-card:hover{border-color:var(--gold);box-shadow:0 10px 30px rgba(12,59,46,.08);transform:translateY(-2px)}
+.offer-card.primary{border:2px solid var(--gold-soft);background:linear-gradient(180deg,#fffdf8 0%,#fff 60%)}
+.offer-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.offer-badge{font-size:12px;font-weight:700;color:var(--green);background:#eef4f0;border-radius:999px;padding:3px 10px}
+.offer-card h3{font-size:17.5px;font-weight:800;line-height:1.35}
+.offer-card h3 .gi{color:var(--gold)}
+.offer-meta{display:grid;gap:4px;font-size:14px;flex:1}
+.offer-meta>div{display:grid;grid-template-columns:52px 1fr}
+.offer-meta dt{color:#8a948e;font-weight:700}
+.offer-meta dd{color:var(--ink)}
 
 /* floating cta */
 .float-cta{position:fixed;right:16px;bottom:18px;z-index:60;background:var(--gold);color:var(--green-dark);font-weight:800;font-size:15px;padding:13px 22px;border-radius:999px;box-shadow:0 8px 24px rgba(0,0,0,.28);transition:.2s}
