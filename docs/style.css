@@ -133,6 +133,17 @@ tbody tr:hover{background:var(--gold-pale)}
 .chip{border:1px solid var(--line);border-radius:999px;padding:9px 18px;font-weight:700;font-size:14.5px;background:#fff;transition:.15s}
 .chip:hover{background:var(--green);color:#fff;border-color:var(--green)}
 
+/* alumni (동문 활동) */
+.alumni-tags{list-style:none;display:flex;flex-wrap:wrap;gap:8px}
+.alumni-tags li{border:1px solid var(--line);border-radius:999px;padding:7px 14px;font-size:14px;font-weight:700;background:#fff;color:var(--green)}
+.alumni-near{display:grid;gap:14px}
+.alumni-near>div{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.alumni-near strong{display:block;margin-bottom:8px;font-size:15px}
+.alumni-near strong a{color:var(--green);text-decoration:underline;text-underline-offset:3px}
+.alumni-table td.td-region{font-weight:800;white-space:nowrap}
+.alumni-table td.td-region a{color:var(--green);text-decoration:underline;text-underline-offset:3px}
+.alumni-table td.td-week{vertical-align:top}
+
 /* teaser / about */
 .teaser-grid{display:grid;grid-template-columns:300px 1fr;gap:44px;align-items:center}
 @media(max-width:760px){.teaser-grid{grid-template-columns:1fr}}

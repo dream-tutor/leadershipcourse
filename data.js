@@ -260,4 +260,28 @@ const REVIEWS = [
   },
 ];
 
-module.exports = { BASE_URL, YEAR_LABEL, FORM_ENDPOINT, SCHEDULE, REGIONS, BRANCH, COURSES, REVIEWS };
+// ------------------------------------------------------------
+// 지역별 카네기 동문 활동 (CEO 과정 수료자 모임 — 지사 취합 자료, 2026-09)
+// region: REGIONS slug (사이트에 지역 페이지가 없는 곳은 null → ceo.html 전체 표에만 표시)
+// ------------------------------------------------------------
+const ALUMNI = [
+  { branch: "hq",       region: "seoul",         name: "서울",              acts: ["카네기서울클럽"] },
+  { branch: "gyeonggi", region: "suwon",         name: "수원",              acts: ["총동문회", "골프회", "산악회", "징검다리회", "여성동우회"] },
+  { branch: "gyeonggi", region: "siheung",       name: "시흥",              acts: ["총동문회", "골프회", "산악회", "징검다리회"] },
+  { branch: "gyeonggi", region: "goyang",        name: "고양",              acts: ["총동문회", "골프회", "산악회"] },
+  { branch: "gyeonggi", region: "hwaseong-osan", name: "화성·오산",          acts: ["총동문회", "골프회", "산악회", "징검다리회"] },
+  { branch: "gyeonggi", region: "uijeongbu",     name: "의정부·양주·포천",    acts: ["총동문회", "골프회", "산악회", "징검다리회(GA클럽)", "카네기밴드"] },
+  { branch: "gyeonggi", region: "paju",          name: "파주",              acts: ["총동문회", "골프회", "산악회", "사막회"] },
+  { branch: "daegu",    region: "daegu",         name: "대구",              acts: ["대구총동문회", "독서클럽(격주 1회)", "골프클럽", "다누리클럽(월 1회)", "체육대회(연 1회)", "회장배 골프대회(연 1회)", "동문회 이·취임식(연 1회)"] },
+  { branch: "daegu",    region: "pohang",        name: "포항",              acts: ["포항총동문회", "독서클럽(주 1회)", "골프클럽", "산악회(월 1회)", "체육대회(연 1회)", "회장배 골프대회(연 1회)", "동문회 이·취임식(연 1회)"] },
+  { branch: "daegu",    region: null,            name: "상주",              acts: ["상주총동문회", "골프클럽", "멀티테마클럽(월 1회)", "체육대회(연 1회)", "동문회 이·취임식(연 1회)"] },
+  { branch: "daegu",    region: null,            name: "구미",              acts: ["구미총동문회", "골프클럽", "CRM(월 1회)", "체육대회(연 1회)", "회장배 골프대회(연 1회)", "동문회 이·취임식(연 1회)"] },
+  { branch: "jeonbuk",  region: "jeonbuk",       name: "전주",              acts: ["클릭소사이어티 경제동아리", "공감독서토론동아리", "전북카네기 CEO합창단", "리더스 그림독서토론", "독서경영코칭(주 1회)", "청년독서클럽(월 1회)"] },
+  { branch: "busan",    region: "busan",         name: "부산",              acts: ["리뷰세미나(격주 1회)", "독서모임(분기 1회)", "트레킹", "골프대회", "송년회(연 1회)"] },
+  { branch: "ulsan",    region: "ulsan",         name: "울산",              acts: ["정기총회", "동문회 이·취임식", "문화행사", "테마여행", "친선 골프대회", "카네기인의 밤(연 1회)", "어게인 열정 세미나·외부/내부 강사 세미나(연 3회)"] },
+  { branch: "changwon", region: null,            name: "창원(창원·마산·진해)", acts: ["트레킹(매월 1회)", "동문가족 체육대회", "골프대회", "송년회", "1박2일 골프 및 하계캠프(연 1회)", "동문회 이·취임식(연 1회)"] },
+  { branch: "changwon", region: "jinju",         name: "진주(진주·사천)",     acts: ["새해 떡국나눔", "초청강연", "힐링 도보여행", "골프행사", "영화·공연 관람", "문화탐방", "송년의 밤(연 1회)", "동문회 이·취임식(연 1회)", "새벽독서토론회(월 1회)", "리마인드 프로그램(분기 1회)"] },
+  { branch: "gwangju",  region: "gwangju",       name: "광주",              acts: ["동문회 이·취임식", "골프대회", "바자회", "리프레쉬 교육 및 명사초청 한마음대잔치(연 1회)", "볼링회", "뮤직동호회", "독서동호회(월 1회)"] },
+];
+
+module.exports = { BASE_URL, YEAR_LABEL, FORM_ENDPOINT, SCHEDULE, REGIONS, BRANCH, COURSES, REVIEWS, ALUMNI };
