@@ -12,23 +12,11 @@ const YEAR_LABEL = "2026 하반기";
 const FORM_ENDPOINT = "https://script.google.com/macros/s/AKfycbwM_RUWCIPUWOAheguPujsuIAQ_XcxshA7SIbkLr_IBmOCalGZQI-B3qoZCXZsyeUrB/exec";
 
 // ------------------------------------------------------------
-// 개강 일정 (2026 하반기)
+// 개강 일정 (2026 하반기) — 2026.09.04 기준 이미 개강한 기수 제외
 // course: 과정 코드 / region: 지역 slug / gi: 기수
 // ------------------------------------------------------------
 const SCHEDULE = [
-  { name: "천안아산 CEO",        course: "ceo",   region: "cheonan-asan",  gi: "16",  open: "07.21", close: "10.27", day: "화",   weeks: "12주", fee: 2600000 },
-  { name: "대구경북 청소년 카네기", course: "youth", region: "daegu",         gi: "27",  open: "07.24", close: "07.26", day: "금~일", weeks: "3일",  fee: 1000000 },
-  { name: "서울 청소년 카네기",    course: "youth", region: "seoul",         gi: "27",  open: "07.24", close: "07.26", day: "금~일", weeks: "3일",  fee: 770000 },
-  { name: "전북 CEO",            course: "ceo",   region: "jeonbuk",       gi: "49",  open: "08.13", close: "12.10", day: "목",   weeks: "16주", fee: 3800000, time: "19:00~" },
-  { name: "울산 HIP",            course: "hip",   region: "ulsan",         gi: "",    open: "08.19", close: "09.09", day: "수",   weeks: "4주",  fee: 1500000 },
-  { name: "서울 DYLP",           course: "dylp",  region: "seoul",         gi: "17",  open: "08.20", close: "08.21", day: "목·금", weeks: "2일",  fee: 800000 },
-  { name: "용인 CEO",            course: "ceo",   region: "yongin",        gi: "58",  open: "08.27", close: "11.12", day: "목",   weeks: "12주", fee: 2900000, time: "18:00~22:00" },
-  { name: "서울 DCC",            course: "dcc",   region: "seoul",         gi: "528", open: "09.02", close: "10.15", day: "목",   weeks: "8주",  fee: 1300000 },
-  { name: "파주 CEO",            course: "ceo",   region: "paju",          gi: "27",  open: "09.02", close: "11.18", day: "수",   weeks: "12주", fee: 2900000, time: "저녁" },
   { name: "시흥 CEO",            course: "ceo",   region: "siheung",       gi: "65",  open: "09.17", close: "12.10", day: "목",   weeks: "12주", fee: 2900000, time: "저녁" },
-  { name: "포항 CEO",            course: "ceo",   region: "pohang",        gi: "28",  open: "09.03", close: "11.26", day: "목",   weeks: "12주", fee: 1980000 },
-  { name: "울산 CEO",            course: "ceo",   region: "ulsan",         gi: "65",  open: "09.03", close: "12.03", day: "목",   weeks: "12+1주", fee: 2750000 },
-  { name: "서울 매니저 리더십 LTM", course: "ltm",  region: "seoul",         gi: "8",   open: "09.04", close: "09.18", day: "금",   weeks: "3주",  fee: 1200000 },
   { name: "화성오산 CEO",         course: "ceo",   region: "hwaseong-osan", gi: "42",  open: "09.14", close: "12.07", day: "월",   weeks: "12주", fee: 2900000, time: "저녁" },
   { name: "대구 CEO",            course: "ceo",   region: "daegu",         gi: "88",  open: "09.07", close: "11.30", day: "월",   weeks: "12주", fee: 2900000 },
   { name: "서울 CEO",            course: "ceo",   region: "seoul",         gi: "103", open: "09.08", close: "11.24", day: "화",   weeks: "12주", fee: 4000000, time: "17:00~21:00", includes: "美 데일카네기 인증 수료증 · 교육/훈련비 일체 · 미국 인증 트레이너 강의 & 경영(자) 코칭 · 저녁 만찬(석식) · 워크숍 세미나(1박 2일) · 시스템 다이어리 (부가세 포함)" },
