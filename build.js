@@ -4,7 +4,7 @@
 // ============================================================
 const fs = require("fs");
 const path = require("path");
-const { BASE_URL, YEAR_LABEL, FORM_ENDPOINT, SCHEDULE, REGIONS, BRANCH, COURSES, REVIEWS } = require("./data.js");
+const { BASE_URL, YEAR_LABEL, FORM_ENDPOINT, SCHEDULE, REGIONS, BRANCH, COURSES, REVIEWS, ALUMNI } = require("./data.js");
 const GUIDES = [...require("./guides-reference.js"), ...require("./guides-columns.js")];
 
 const OUT = path.join(__dirname, "docs"); // GitHub Pages 배포 폴더 (main 브랜치 /docs)
@@ -601,6 +601,54 @@ ${consultSection()}`;
 }
 
 // ------------------------------------------------------------
+// 동문 활동 (CEO 수료자 모임) — ceo.html 전체 표 + 지역 페이지 개별 표시
+// ------------------------------------------------------------
+const BRANCH_ORDER = ["hq", "gyeonggi", "daegu", "jeonbuk", "busan", "ulsan", "changwon", "gwangju"];
+
+function alumniTags(acts) {
+  return `<ul class="alumni-tags">${acts.map((a) => `<li>${esc(a)}</li>`).join("")}</ul>`;
+}
+
+// ceo.html — 지사별 전체 표
+function alumniTableHtml() {
+  const rows = BRANCH_ORDER.flatMap((bk) => {
+    const list = ALUMNI.filter((a) => a.branch === bk);
+    return list.map((a, i) => `<tr>${i === 0 ? `<td class="td-week" rowspan="${list.length}">${esc(BRANCH[bk].label)}</td>` : ""}
+      <td class="td-region">${a.region ? `<a href="${a.region}.html">${esc(a.name)}</a>` : esc(a.name)}</td>
+      <td>${a.acts.map(esc).join(", ")}</td></tr>`);
+  }).join("\n");
+  return `<section class="section" id="alumni">
+  <div class="wrap">
+    <h2 class="sec-title">수료 후에도 이어지는 지역별 동문 활동</h2>
+    <p class="sec-sub">최고경영자 코스는 12주로 끝나지 않습니다. 각 지역 수료 동문들이 총동문회를 중심으로 골프회·산악회·독서클럽 등 정기 모임을 직접 운영하고 있습니다. 아래는 지사별로 취합한 현재 활동 중인 동문 모임입니다.</p>
+    <div class="table-wrap"><table class="curri alumni-table">
+      <thead><tr><th>지사</th><th>지역</th><th>동문 활동</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>
+    <p class="sec-sub" style="margin-top:14px">지역명을 누르면 해당 지역 최고경영자 코스 모집 안내로 이동합니다. 표에 없는 지역의 동문 모임은 상담 시 안내드립니다.</p>
+  </div>
+</section>`;
+}
+
+// 지역 페이지 — 해당 지역 활동, 없으면 같은 지사 관할 지역 활동을 참고로 표시
+function alumniRegionHtml(slug) {
+  const r = REGIONS[slug];
+  const mine = ALUMNI.find((a) => a.region === slug);
+  if (mine) {
+    return `<h3 class="sec-title-sm" style="margin-top:30px">${r.name} 카네기 동문 활동</h3>
+    <p class="sec-sub" style="margin-bottom:14px">수료 후 ${r.name} 동문들이 실제 운영하고 있는 모임입니다. 기수를 넘어 선후배 경영자가 함께합니다.</p>
+    ${alumniTags(mine.acts)}`;
+  }
+  const near = ALUMNI.filter((a) => a.branch === r.branch && a.region);
+  if (near.length) {
+    return `<h3 class="sec-title-sm" style="margin-top:30px">${BRANCH[r.branch].label} 관할 지역 동문 활동</h3>
+    <p class="sec-sub" style="margin-bottom:14px">${r.name} 수료 동문은 같은 지사 관할 인근 지역 동문 모임과 함께 활동합니다. 참여 가능한 모임은 상담 시 안내드립니다.</p>
+    <div class="alumni-near">${near.map((a) => `<div><strong><a href="${a.region}.html">${esc(a.name)}</a></strong>${alumniTags(a.acts)}</div>`).join("")}</div>`;
+  }
+  return `<p class="sec-sub" style="margin-top:22px">${r.name} 동문 모임 안내는 상담 시 드리며, 전국 지역별 동문 활동은 <a href="ceo.html#alumni">최고경영자 코스 페이지</a>에서 확인할 수 있습니다.</p>`;
+}
+
+// ------------------------------------------------------------
 // 과정별 상세 콘텐츠
 // ------------------------------------------------------------
 const DETAIL = {
@@ -783,6 +831,8 @@ function buildCourse(key) {
 
 ${d.extra}
 
+${key === "ceo" ? alumniTableHtml() : ""}
+
 ${rows.length ? `<section class="section">
   <div class="wrap">
     <h2 class="sec-title">${YEAR_LABEL} 개강 일정</h2>
@@ -900,7 +950,8 @@ ${rows.length ? `<section class="section alt">
       <li>한국카네기클럽 정회원 — 전국 30,000명 경영자 동문 네트워크</li>
       <li>조찬포럼 · 트레킹 · 골프 · 세미나 등 문화활동</li>
     </ul>
-    <p class="sec-sub" style="margin-top:16px">관련 글: <a href="guide-ceo-network.html">CEO에게 좋은 모임이 필요한 진짜 이유</a></p>
+    ${alumniRegionHtml(slug)}
+    <p class="sec-sub" style="margin-top:16px">관련 글: <a href="guide-ceo-network.html">CEO에게 좋은 모임이 필요한 진짜 이유</a> · <a href="ceo.html#alumni">전국 지역별 동문 활동 보기</a></p>
   </div>
 </section>
 
@@ -1339,6 +1390,17 @@ tbody tr:hover{background:var(--gold-pale)}
 .chip-grid{display:flex;flex-wrap:wrap;gap:10px}
 .chip{border:1px solid var(--line);border-radius:999px;padding:9px 18px;font-weight:700;font-size:14.5px;background:#fff;transition:.15s}
 .chip:hover{background:var(--green);color:#fff;border-color:var(--green)}
+
+/* alumni (동문 활동) */
+.alumni-tags{list-style:none;display:flex;flex-wrap:wrap;gap:8px}
+.alumni-tags li{border:1px solid var(--line);border-radius:999px;padding:7px 14px;font-size:14px;font-weight:700;background:#fff;color:var(--green)}
+.alumni-near{display:grid;gap:14px}
+.alumni-near>div{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.alumni-near strong{display:block;margin-bottom:8px;font-size:15px}
+.alumni-near strong a{color:var(--green);text-decoration:underline;text-underline-offset:3px}
+.alumni-table td.td-region{font-weight:800;white-space:nowrap}
+.alumni-table td.td-region a{color:var(--green);text-decoration:underline;text-underline-offset:3px}
+.alumni-table td.td-week{vertical-align:top}
 
 /* teaser / about */
 .teaser-grid{display:grid;grid-template-columns:300px 1fr;gap:44px;align-items:center}
