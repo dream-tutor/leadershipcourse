@@ -6,7 +6,7 @@
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{font-family:"Pretendard Variable",Pretendard,-apple-system,"Malgun Gothic",sans-serif;color:var(--ink);background:var(--white);line-height:1.65;word-break:keep-all;overflow-wrap:break-word}
+body{font-family:"Malgun Gothic","맑은 고딕","Pretendard Variable",Pretendard,-apple-system,sans-serif;color:var(--ink);background:var(--white);line-height:1.65;word-break:keep-all;overflow-wrap:break-word}
 h1,h2,h3{text-wrap:balance}
 p,li,dd{text-wrap:pretty}
 @media(max-width:640px){.hero h1 br,.hero-sub br,.consult-copy p br,.footer-brand p br{display:none}}
@@ -143,6 +143,48 @@ tbody tr:hover{background:var(--gold-pale)}
 .alumni-table td.td-region{font-weight:800;white-space:nowrap}
 .alumni-table td.td-region a{color:var(--green);text-decoration:underline;text-underline-offset:3px}
 .alumni-table td.td-week{vertical-align:top}
+
+/* brand logo (Dale Carnegie 공식 로고 — 흑/백 원형 그대로 사용) */
+.brand{display:flex;align-items:center;gap:12px}
+.brand-sep{width:1px;height:22px;background:var(--line)}
+.dc-logo{height:22px;width:auto;display:block}
+.footer-logo{height:30px;width:auto;display:block;margin:2px 0 6px}
+.footer-logo-cap{font-size:12.5px;color:#8fa199;margin-bottom:14px}
+@media(max-width:560px){.dc-logo{height:18px}.brand{gap:9px}}
+
+/* 브랜드 가이드: 본문 양끝 정렬, 강의 사진 흑백 */
+.lead,.narrow p:not(.form-fine):not(.form-done *),.faq-a p,.faq-a li,.endorse-grid blockquote,.why-list p,.cycle-grid p{text-align:justify}
+.gallery img{filter:grayscale(1)}
+
+/* endorsements */
+.endorse-grid blockquote{border-left-color:var(--green)}
+.cycle-grid .by{margin-top:8px;font-size:13px;color:var(--green);font-weight:700;text-align:right}
+
+/* admission */
+.refund-list{list-style:none;display:grid;gap:6px}
+.refund-list li{font-size:14.5px}
+.refund-list span{display:inline-block;min-width:150px;font-weight:700;color:var(--green)}
+.dd-note{display:block;margin-top:6px;font-size:13.5px;color:var(--muted)}
+
+/* faq */
+.faq-cat{margin-top:34px}
+.faq-list{display:grid;gap:10px}
+.faq-item{background:#fff;border:1px solid var(--line);border-radius:12px;padding:0 20px}
+.section.alt .faq-item{background:#fff}
+.faq-item summary{cursor:pointer;list-style:none;padding:16px 28px 16px 0;font-weight:800;font-size:15.5px;position:relative}
+.faq-item summary::-webkit-details-marker{display:none}
+.faq-item summary::after{content:"+";position:absolute;right:0;top:14px;font-size:20px;color:var(--gold);font-weight:800}
+.faq-item[open] summary::after{content:"–"}
+.faq-a{padding:0 0 18px;font-size:15px;color:#33403a}
+.faq-a p{margin-bottom:10px}
+.faq-a ul,.faq-a ol{margin:0 0 12px 20px;display:grid;gap:6px}
+.faq-a strong{color:var(--green)}
+
+/* region extras */
+.action-three>div{padding:16px}
+.action-three strong{font-size:15px}
+.reco-close{margin-top:30px;background:#fff;border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:12px;padding:22px;font-size:15.5px}
+.reco-close cite{display:block;margin-top:10px;font-style:normal;font-weight:700;color:var(--green);font-size:13.5px}
 
 /* teaser / about */
 .teaser-grid{display:grid;grid-template-columns:300px 1fr;gap:44px;align-items:center}
