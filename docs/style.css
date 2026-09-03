@@ -105,6 +105,31 @@ a{color:inherit;text-decoration:none}
 .course-short{font-size:14px;color:var(--muted);flex:1}
 .course-meta{font-size:13px;color:#8a948e}
 .course-more{font-size:14px;font-weight:700;color:var(--green)}
+.course-card.featured{border-width:2px;border-color:var(--gold-soft);background:linear-gradient(180deg,#fffdf8 0%,#fff 60%)}
+.course-card.featured h3{font-size:22px}
+.course-label{font-size:12.5px;font-weight:800;color:var(--green);letter-spacing:.04em}
+.course-stat{font-size:13.5px;font-weight:700;color:var(--green-dark);background:var(--gold-pale);border-radius:8px;padding:7px 10px;width:fit-content}
+.course-grid.compact{grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:900px){.course-grid.compact{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.course-grid.compact{grid-template-columns:1fr}}
+.course-card.compact{padding:18px 20px;gap:6px}
+.course-card.compact h3{font-size:16px}
+.course-card.compact .course-short{font-size:13px}
+/* 지역 모집 과정 카드 */
+.offer-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:900px){.offer-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.offer-grid{grid-template-columns:1fr}}
+.offer-card{display:flex;flex-direction:column;gap:10px;border:1px solid var(--line);border-radius:16px;padding:22px;background:#fff;transition:.15s}
+.offer-card:hover{border-color:var(--gold);box-shadow:0 10px 30px rgba(12,59,46,.08);transform:translateY(-2px)}
+.offer-card.primary{border:2px solid var(--gold-soft);background:linear-gradient(180deg,#fffdf8 0%,#fff 60%)}
+.offer-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.offer-badge{font-size:12px;font-weight:700;color:var(--green);background:#eef4f0;border-radius:999px;padding:3px 10px}
+.offer-card h3{font-size:17.5px;font-weight:800;line-height:1.35}
+.offer-card h3 .gi{color:var(--gold)}
+.offer-meta{display:grid;gap:4px;font-size:14px;flex:1}
+.offer-meta>div{display:grid;grid-template-columns:52px 1fr}
+.offer-meta dt{color:#8a948e;font-weight:700}
+.offer-meta dd{color:var(--ink)}
 
 /* floating cta */
 .float-cta{position:fixed;right:16px;bottom:18px;z-index:60;background:var(--gold);color:var(--green-dark);font-weight:800;font-size:15px;padding:13px 22px;border-radius:999px;box-shadow:0 8px 24px rgba(0,0,0,.28);transition:.2s}
