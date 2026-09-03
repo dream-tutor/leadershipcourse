@@ -6,6 +6,7 @@ const fs = require("fs");
 const path = require("path");
 const { BASE_URL, YEAR_LABEL, FORM_ENDPOINT, SCHEDULE, REGIONS, BRANCH, COURSES, REVIEWS, ALUMNI } = require("./data.js");
 const GUIDES = [...require("./guides-reference.js"), ...require("./guides-columns.js")];
+const CC = require("./ceo-content.js");
 
 const OUT = path.join(__dirname, "docs"); // GitHub Pages 배포 폴더 (main 브랜치 /docs)
 const CSS_VER = Date.now().toString(36); // 빌드마다 갱신 — CSS 캐시 어긋남 방지
@@ -150,7 +151,7 @@ ${ldScripts}
 <body>
 <header class="site-header">
   <div class="wrap header-inner">
-    <a class="brand" href="index.html"><span class="brand-word">카네기<em>코스</em></span></a>
+    <a class="brand" href="index.html"><span class="brand-word">카네기<em>코스</em></span><span class="brand-sep" aria-hidden="true"></span><img class="dc-logo" src="assets/dc-logo-black.png" alt="Dale Carnegie" width="900" height="229"></a>
     <nav class="nav">
       <a href="about.html">데일 카네기 소개</a>
       <a href="index.html#courses">과정 안내</a>
@@ -218,6 +219,8 @@ function footer() {
     <div class="footer-grid">
       <div class="footer-brand">
         <div class="footer-word">카네기<em>코스</em></div>
+        <img class="footer-logo" src="assets/dc-logo-white.png" alt="Dale Carnegie" width="900" height="229">
+        <p class="footer-logo-cap">데일카네기 공개과정 안내</p>
         <p>Since 1912, 전 세계 90여 개국 900만 명이 수료한 <br>세계 최고의 성인교육 프로그램. <br>대한민국에서는 1992년부터 함께해 왔습니다.</p>
         <a class="btn btn-gold footer-cta" href="#consult">상담 신청하기</a>
       </div>
@@ -649,6 +652,174 @@ function alumniRegionHtml(slug) {
 }
 
 // ------------------------------------------------------------
+// 최고경영자 코스 보강 섹션 (ceo-content.js)
+// ------------------------------------------------------------
+function ceoIntroExtra() {
+  return `<section class="section alt">
+  <div class="wrap">
+    <h2 class="sec-title">경영의 가장 어려운 숙제는 결국 '사람'입니다</h2>
+    <p class="sec-sub">사업을 성장시키는 일도 어렵지만, 사람의 마음을 얻고 조직을 움직이는 일은 더 어렵습니다. 최고경영자 코스는 인간관계가 삶의 질을 좌우하듯 '인간경영리더십'이 경영 성과를 좌우한다는 전제에서 출발합니다.</p>
+    <div class="cycle-grid three">
+      ${CC.HARDEST_THREE.map(([t, d], i) => `<div><span>0${i + 1}</span><strong>${t}</strong><p>${d}</p></div>`).join("")}
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap two-col">
+    <div>
+      <h2 class="sec-title-sm">최고경영자 코스의 특징</h2>
+      <ul class="check-list">${CC.CEO_FEATURES.map((t) => `<li>${t}</li>`).join("")}</ul>
+      <h2 class="sec-title-sm" style="margin-top:30px">과정 핵심 개념 · Five Drivers for Success</h2>
+      <ul class="alumni-tags">${CC.FIVE_DRIVERS.map((t) => `<li>${t}</li>`).join("")}</ul>
+    </div>
+    <div>
+      <h2 class="sec-title-sm">기대 이익</h2>
+      <ul class="check-list gold">${CC.CEO_BENEFITS.map((t) => `<li>${t}</li>`).join("")}</ul>
+    </div>
+  </div>
+</section>`;
+}
+
+function ceoFourHtml() {
+  return `<section class="section alt">
+  <div class="wrap">
+    <h2 class="sec-title">인간경영을 통한 성과경영</h2>
+    <p class="sec-sub">"CEO는 다음 네 가지를 항상 생각합니다." — Why, What, How, Performance. 태도에서 출발해 지식과 연습을 거쳐 기술과 습관으로 남는 자기개발 사이클입니다.</p>
+    <div class="cycle-grid">
+      ${CC.CEO_FOUR.map((f, i) => `<div><span>0${i + 1} · ${f.k}</span><strong>${f.t}</strong><p>"${f.q}"</p><p class="by">— ${f.by}</p></div>`).join("")}
+    </div>
+    <h2 class="sec-title-sm" style="margin-top:40px">인간경영리더십 4단계</h2>
+    <ol class="step-list">
+      ${CC.LEADERSHIP_4.map(([t, d]) => `<li><strong>${t}</strong> — ${d}</li>`).join("")}
+    </ol>
+    <p class="sec-sub" style="margin-top:18px">당신의 리더십은 지금 어느 단계에 있습니까?</p>
+  </div>
+</section>`;
+}
+
+function endorsementsHtml() {
+  return `<section class="section">
+  <div class="wrap">
+    <h2 class="sec-title">추천의 글</h2>
+    <p class="sec-sub">세계적인 경영자와 국내 각계 리더들이 데일카네기 코스를 이렇게 이야기합니다.</p>
+    <div class="quote-grid endorse-grid">
+      ${CC.ENDORSEMENTS.map((e) => `<blockquote>"${e.text}"<cite>— ${e.name} (${e.title})</cite></blockquote>`).join("\n")}
+    </div>
+  </div>
+</section>`;
+}
+
+function admissionHtml() {
+  return `<section class="section alt">
+  <div class="wrap narrow">
+    <h2 class="sec-title">모집 요강</h2>
+    <p class="sec-sub">서울 본원 기준 공통 안내입니다. 지역별 세부 조건은 각 지역 페이지와 상담 시 안내드립니다.</p>
+    <dl class="info-list">
+      <div><dt>강 사</dt><dd>${CC.ADMISSION.instructor}</dd></div>
+      <div><dt>교육 자료</dt><dd>${CC.ADMISSION.materials}</dd></div>
+      <div><dt>접수 기간</dt><dd>${CC.ADMISSION.deadline}</dd></div>
+      <div><dt>모집 절차</dt><dd>${CC.ADMISSION.apply}</dd></div>
+      <div><dt>환불 규정</dt><dd><ul class="refund-list">${CC.ADMISSION.refund.map(([k, v]) => `<li><span>${k}</span>${v}</li>`).join("")}</ul></dd></div>
+      <div><dt>문의·접수</dt><dd><a href="#consult">하단 상담 신청 양식으로 접수해 주세요 →</a></dd></div>
+    </dl>
+  </div>
+</section>`;
+}
+
+const FAQ_DUR = { ceo: "12주(지역에 따라 13주, 전주 16주)", dcc: "8~9주" };
+function faqAnswer(item, key) {
+  return item.a
+    .replace(/\{DUR\}/g, FAQ_DUR[key] || "8~12주")
+    .replace(/\{ALUMNI_LINK\}/g, key === "ceo" ? '<a href="#alumni">지역별 동문 활동</a>' : '<a href="ceo.html#alumni">지역별 동문 활동</a>');
+}
+function faqHtml(key) {
+  return `<section class="section" id="faq">
+  <div class="wrap narrow">
+    <h2 class="sec-title">자주 묻는 질문</h2>
+    <p class="sec-sub">상담에서 가장 많이 받는 질문을 모았습니다. 질문을 누르면 답변이 열립니다.</p>
+    ${CC.FAQ.map((g) => `<h3 class="sec-title-sm faq-cat">${g.cat}</h3>${g.lead ? `<p class="sec-sub" style="margin-bottom:14px">${g.lead}</p>` : ""}
+    <div class="faq-list">
+      ${g.items.map((it) => `<details class="faq-item"><summary>${it.q}</summary><div class="faq-a">${faqAnswer(it, key)}</div></details>`).join("\n")}
+    </div>`).join("\n")}
+  </div>
+</section>`;
+}
+function faqJsonld(key) {
+  const strip = (h) => h.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: CC.FAQ.flatMap((g) => g.items.map((it) => ({
+      "@type": "Question", name: it.q,
+      acceptedAnswer: { "@type": "Answer", text: strip(faqAnswer(it, key)) },
+    }))),
+  };
+}
+
+// 지역 페이지 — 다섯 가지 변화 + 행동 훈련 3단계
+function regionChangesHtml(r) {
+  return `<section class="section">
+  <div class="wrap two-col">
+    <div>
+      <h2 class="sec-title-sm">${r.name} 최고경영자 코스에서 만나는 다섯 가지 변화</h2>
+      <ol class="step-list">${CC.FIVE_CHANGES.map((t) => `<li>${t}</li>`).join("")}</ol>
+      <p class="sec-sub" style="margin-top:14px;margin-bottom:0">수료 후에도 총동문회 활동과 성장의 기회는 계속됩니다.</p>
+    </div>
+    <div>
+      <h2 class="sec-title-sm">듣는 교육을 넘어, 행동이 달라지는 훈련입니다</h2>
+      <p style="margin-bottom:14px">데일카네기 CEO 과정은 참여와 실천, 피드백을 통해 자신의 리더십을 실제 행동으로 변화시키는 과정입니다.</p>
+      <div class="cycle-grid three action-three">
+        ${CC.ACTION_THREE.map(([t, d], i) => `<div><span>0${i + 1}</span><strong>${t}</strong><p>${d}</p></div>`).join("")}
+      </div>
+      <p class="sec-sub" style="margin-top:16px;margin-bottom:0"><strong>"조금 더 여유가 생기면 해야지."</strong> 그러나 리더에게 완벽하게 여유로운 때는 좀처럼 찾아오지 않습니다. 바쁘기 때문에 배워야 하고, 책임이 크기 때문에 지금 성장해야 합니다. 이번 12주의 선택이 앞으로의 10년을 이끄는 리더십의 전환점이 될 수 있습니다.</p>
+    </div>
+  </div>
+</section>`;
+}
+
+// 지역 페이지 — 핵심 FAQ 3개
+function regionFaqHtml(r) {
+  const picks = CC.FAQ.flatMap((g) => g.items).filter((it) => CC.FAQ_REGION_PICK.includes(it.q));
+  return `<section class="section">
+  <div class="wrap narrow">
+    <h2 class="sec-title-sm">${r.name} 최고경영자 코스, 이런 점이 궁금하셨죠</h2>
+    <div class="faq-list">
+      ${picks.map((it) => `<details class="faq-item"><summary>${it.q}</summary><div class="faq-a">${faqAnswer(it, "region")}</div></details>`).join("\n")}
+    </div>
+    <p class="sec-sub" style="margin-top:16px;margin-bottom:0">더 많은 질문과 답변은 <a href="ceo.html#faq">최고경영자 코스 자주 묻는 질문</a>에서 확인하세요.</p>
+  </div>
+</section>`;
+}
+
+// 광주하남 — 50기 수료생 추천서
+function hanamRecoHtml() {
+  const h = CC.HANAM_RECO;
+  return `<section class="section alt">
+  <div class="wrap">
+    <p class="hero-kicker" style="color:var(--gold)">광주하남 수료생 추천서</p>
+    <h2 class="sec-title">"${h.headline}"</h2>
+    <p class="sec-sub">${h.sub}. 수많은 교육을 이수해 봤지만, 데일카네기 교육은 단연코 달랐습니다.</p>
+    <ul class="check-list gold" style="margin-bottom:34px">${h.intro.map((t) => `<li>${t}</li>`).join("")}</ul>
+    <div class="two-col">
+      <div>
+        <h3 class="sec-title-sm">교육 구성</h3>
+        <ul class="check-list">${h.structure.map(([t, d]) => `<li><strong>${t}</strong>${d ? ` — ${d}` : ""}</li>`).join("")}</ul>
+        <h3 class="sec-title-sm" style="margin-top:26px">교육 내용</h3>
+        <ul class="check-list">${h.content.map(([t, d]) => `<li><strong>${t}</strong>${d ? ` — ${d}` : ""}</li>`).join("")}</ul>
+      </div>
+      <div>
+        <h3 class="sec-title-sm">데일카네기를 추천하는 이유</h3>
+        <ol class="step-list">${h.reasons.map(([t, d]) => `<li><strong>${t}</strong><br><span style="color:var(--muted);font-size:14px">${d}</span></li>`).join("")}</ol>
+      </div>
+    </div>
+    <div class="cycle-grid" style="margin-top:34px">${h.values.map(([t, d]) => `<div><strong>${t}</strong><p>${d}</p></div>`).join("")}</div>
+    <blockquote class="reco-close">"${h.closing}"<cite>— ${h.author}</cite></blockquote>
+  </div>
+</section>`;
+}
+
+// ------------------------------------------------------------
 // 과정별 상세 콘텐츠
 // ------------------------------------------------------------
 const DETAIL = {
@@ -668,10 +839,10 @@ const DETAIL = {
     extra: `<section class="section alt"><div class="wrap">
       <h2 class="sec-title">최고경영자과정 특전</h2>
       <div class="perk-grid">
-        <div><span>01</span><strong>Certification</strong><p>전 세계 85개국에서 동일하게 인정되는 美 데일카네기 본사 공인 수료증 수여</p></div>
+        <div><span>01</span><strong>Certification</strong><p>전 세계 90개국에서 동일하게 인정받는 美 데일카네기 본사 공인 수료증 수여</p></div>
         <div><span>02</span><strong>Graduate · Assistant</strong><p>코스 수료 후 차기 프로그램에 코치로 활동 가능 &amp; 코치 수료증 발급</p></div>
-        <div><span>03</span><strong>Carnegie Club</strong><p>한국카네기클럽 정회원 — 전국 30,000명 동문과 조찬포럼·트레킹·골프·세미나 등 교류</p></div>
-        <div><span>04</span><strong>美 센트럴 미주리 대학교 MBA 자격</strong><p>최고경영자 과정 포함, 추가 과정 수료 시 '데일카네기 MBA코스' 수료증 발급</p></div>
+        <div><span>03</span><strong>Carnegie Club</strong><p>한국카네기클럽 정회원 — 전국 30,000명 동문과 조찬포럼·트레킹·골프·독서·문화활동·사회봉사·세미나 등 교류</p></div>
+        <div><span>04</span><strong>美 센트럴 미주리 대학교 MBA 자격</strong><p>본 코스 수료 후 카네기 최고경영자 리더십 세미나(CEO TLA)와 HIP 스피치 과정을 수료하면 美 미주리 대학교가 수여하는 '데일카네기 MBA코스' 수료증 발급</p></div>
       </div>
     </div></section>`,
   },
@@ -806,6 +977,8 @@ function buildCourse(key) {
   </div>
 </section>
 
+${key === "ceo" ? ceoIntroExtra() : ""}
+
 <section class="section alt">
   <div class="wrap two-col">
     <div>
@@ -829,7 +1002,11 @@ function buildCourse(key) {
   </div>
 </section>
 
+${key === "ceo" ? ceoFourHtml() : ""}
+
 ${d.extra}
+
+${key === "ceo" ? endorsementsHtml() : ""}
 
 ${key === "ceo" ? alumniTableHtml() : ""}
 
@@ -840,6 +1017,10 @@ ${rows.length ? `<section class="section">
     ${key === "ceo" ? `<p class="sec-sub" style="margin-top:16px">이 외 지역별 상세 안내는 <a href="index.html#regions">지역별 안내</a>에서 확인하세요.</p>` : ""}
   </div>
 </section>` : `<section class="section"><div class="wrap"><h2 class="sec-title">개강 일정</h2><p class="sec-sub">현재 모집 중인 기수 일정은 문의 시 안내드립니다.</p></div></section>`}
+
+${key === "ceo" ? admissionHtml() : ""}
+
+${key === "ceo" || key === "dcc" ? faqHtml(key) : ""}
 
 ${COMBO_COURSES.includes(key) ? `<section class="section alt">
   <div class="wrap">
@@ -869,13 +1050,16 @@ ${consultSection({ course: key })}`;
     desc: `${c.short} — ${c.duration}. ${YEAR_LABEL} 개강 일정과 커리큘럼, 참가 대상 안내.`,
     hero,
     body,
-    jsonld: {
-      "@context": "https://schema.org",
-      "@type": "Course",
-      name: c.name,
-      description: c.short,
-      provider: { "@type": "Organization", name: "데일카네기코리아", telephone: BRANCH.hq.tel },
-    },
+    jsonld: (() => {
+      const courseLd = {
+        "@context": "https://schema.org",
+        "@type": "Course",
+        name: c.name,
+        description: c.short,
+        provider: { "@type": "Organization", name: "데일카네기코리아", telephone: BRANCH.hq.tel },
+      };
+      return key === "ceo" || key === "dcc" ? [courseLd, faqJsonld(key)] : courseLd;
+    })(),
   });
 }
 
@@ -908,8 +1092,8 @@ function buildRegion(slug) {
     <dl class="info-list">
       <div><dt>지원 대상</dt><dd>국내외 공·사기업 CEO / 기업 및 기관의 임원, 정부 및 주요기관의 공무원·기관장·단체장, 전문직 및 사회 각 분야의 오피니언 리더</dd></div>
       <div><dt>교육 장소</dt><dd>${r.venue}</dd></div>
-      <div><dt>교육 일정</dt><dd>2026년 ${mainCeo.open} 개강 ~ ${mainCeo.close} 수료 · 매주 ${mainCeo.day}요일 (${mainCeo.weeks} 과정)</dd></div>
-      <div><dt>교 육 비</dt><dd>${fee(mainCeo.fee)} (1인)</dd></div>
+      <div><dt>교육 일정</dt><dd>2026년 ${mainCeo.open} 개강 ~ ${mainCeo.close} 수료 · 매주 ${mainCeo.day}요일${mainCeo.time ? " " + mainCeo.time : ""} (${mainCeo.weeks} 과정)</dd></div>
+      <div><dt>교 육 비</dt><dd>${fee(mainCeo.fee)} (1인)${mainCeo.includes ? `<br><span class="dd-note">포함: ${mainCeo.includes}</span>` : ""}</dd></div>
       <div><dt>접수 기간</dt><dd>교육 시작일 일주일 전까지 &nbsp;※ 조기 마감될 수 있습니다</dd></div>
       <div><dt>모집 절차</dt><dd>수강신청 → 서류심사 → 결과 개별안내 → 수강료 납부 → 등록완료 (약 1주일 소요)</dd></div>
       <div><dt>문의·접수</dt><dd><a href="#consult">하단 상담 신청 양식으로 접수해 주세요 →</a></dd></div>
@@ -957,6 +1141,8 @@ ${rows.length ? `<section class="section alt">
 
 ${why5Html()}
 
+${regionChangesHtml(r)}
+
 <section class="section alt">
   <div class="wrap two-col">
     <div>
@@ -972,7 +1158,7 @@ ${why5Html()}
     <div>
       <h2 class="sec-title-sm">수료 후에도 계속되는 인연</h2>
       <ul class="check-list gold">
-        <li>美 데일카네기 본사 공인 수료증 (전 세계 85개국 동일 인정)</li>
+        <li>美 데일카네기 본사 공인 수료증 (전 세계 90개국 동일 인정)</li>
         <li>한국카네기클럽 정회원 — 전국 30,000명 동문 네트워크</li>
         <li>조찬포럼·트레킹·골프·세미나 등 문화활동 참여</li>
         <li>차기 과정 코치 활동 기회 &amp; 코치 수료증</li>
@@ -980,6 +1166,10 @@ ${why5Html()}
     </div>
   </div>
 </section>
+
+${slug === "gwangju-hanam" ? hanamRecoHtml() : ""}
+
+${regionFaqHtml(r)}
 
 ${consultSection({ region: slug })}`;
 
@@ -1264,7 +1454,7 @@ const CSS = `/* 데일카네기 공개과정 — 생성 파일 (build.js 실행�
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{font-family:"Pretendard Variable",Pretendard,-apple-system,"Malgun Gothic",sans-serif;color:var(--ink);background:var(--white);line-height:1.65;word-break:keep-all;overflow-wrap:break-word}
+body{font-family:"Malgun Gothic","맑은 고딕","Pretendard Variable",Pretendard,-apple-system,sans-serif;color:var(--ink);background:var(--white);line-height:1.65;word-break:keep-all;overflow-wrap:break-word}
 h1,h2,h3{text-wrap:balance}
 p,li,dd{text-wrap:pretty}
 @media(max-width:640px){.hero h1 br,.hero-sub br,.consult-copy p br,.footer-brand p br{display:none}}
@@ -1401,6 +1591,48 @@ tbody tr:hover{background:var(--gold-pale)}
 .alumni-table td.td-region{font-weight:800;white-space:nowrap}
 .alumni-table td.td-region a{color:var(--green);text-decoration:underline;text-underline-offset:3px}
 .alumni-table td.td-week{vertical-align:top}
+
+/* brand logo (Dale Carnegie 공식 로고 — 흑/백 원형 그대로 사용) */
+.brand{display:flex;align-items:center;gap:12px}
+.brand-sep{width:1px;height:22px;background:var(--line)}
+.dc-logo{height:22px;width:auto;display:block}
+.footer-logo{height:30px;width:auto;display:block;margin:2px 0 6px}
+.footer-logo-cap{font-size:12.5px;color:#8fa199;margin-bottom:14px}
+@media(max-width:560px){.dc-logo{height:18px}.brand{gap:9px}}
+
+/* 브랜드 가이드: 본문 양끝 정렬, 강의 사진 흑백 */
+.lead,.narrow p:not(.form-fine):not(.form-done *),.faq-a p,.faq-a li,.endorse-grid blockquote,.why-list p,.cycle-grid p{text-align:justify}
+.gallery img{filter:grayscale(1)}
+
+/* endorsements */
+.endorse-grid blockquote{border-left-color:var(--green)}
+.cycle-grid .by{margin-top:8px;font-size:13px;color:var(--green);font-weight:700;text-align:right}
+
+/* admission */
+.refund-list{list-style:none;display:grid;gap:6px}
+.refund-list li{font-size:14.5px}
+.refund-list span{display:inline-block;min-width:150px;font-weight:700;color:var(--green)}
+.dd-note{display:block;margin-top:6px;font-size:13.5px;color:var(--muted)}
+
+/* faq */
+.faq-cat{margin-top:34px}
+.faq-list{display:grid;gap:10px}
+.faq-item{background:#fff;border:1px solid var(--line);border-radius:12px;padding:0 20px}
+.section.alt .faq-item{background:#fff}
+.faq-item summary{cursor:pointer;list-style:none;padding:16px 28px 16px 0;font-weight:800;font-size:15.5px;position:relative}
+.faq-item summary::-webkit-details-marker{display:none}
+.faq-item summary::after{content:"+";position:absolute;right:0;top:14px;font-size:20px;color:var(--gold);font-weight:800}
+.faq-item[open] summary::after{content:"–"}
+.faq-a{padding:0 0 18px;font-size:15px;color:#33403a}
+.faq-a p{margin-bottom:10px}
+.faq-a ul,.faq-a ol{margin:0 0 12px 20px;display:grid;gap:6px}
+.faq-a strong{color:var(--green)}
+
+/* region extras */
+.action-three>div{padding:16px}
+.action-three strong{font-size:15px}
+.reco-close{margin-top:30px;background:#fff;border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:12px;padding:22px;font-size:15.5px}
+.reco-close cite{display:block;margin-top:10px;font-style:normal;font-weight:700;color:var(--green);font-size:13.5px}
 
 /* teaser / about */
 .teaser-grid{display:grid;grid-template-columns:300px 1fr;gap:44px;align-items:center}
