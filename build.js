@@ -5,7 +5,11 @@
 const fs = require("fs");
 const path = require("path");
 const { BASE_URL, YEAR_LABEL, FORM_ENDPOINT, SCHEDULE, REGIONS, BRANCH, COURSES, REVIEWS, ALUMNI } = require("./data.js");
-const GUIDES = [...require("./guides-reference.js"), ...require("./guides-columns.js")];
+const GUIDES_REF = require("./guides-reference.js");
+const GUIDES_COL = require("./guides-columns.js");
+const GUIDES_INHOUSE = require("./guides-inhouse.js"); // 조직·기업교육 문제형 칼럼 (2026-09)
+const GUIDES = [...GUIDES_REF, ...GUIDES_COL, ...GUIDES_INHOUSE];
+const TOPICS = require("./topics.js"); // 검색어별 기업교육 주제 페이지 (2026-09)
 const CC = require("./ceo-content.js");
 
 const OUT = path.join(__dirname, "docs"); // GitHub Pages 배포 폴더 (main 브랜치 /docs)
@@ -59,6 +63,8 @@ function crumbsFor(file, title) {
   const course = Object.values(COURSES).find((c) => c.slug === base);
   if (base.startsWith("guide-")) {
     t.push({ label: "리더십 칼럼", href: "guide.html" });
+  } else if (base.startsWith("topic-")) {
+    t.push({ label: "기업 맞춤 교육", href: "corporate.html" });
   } else if (course) {
     t.push({ label: "과정 안내", href: "index.html#courses" });
   } else if (REGIONS[base]) {
@@ -104,14 +110,16 @@ function page({ file, title, desc, body, hero = "", jsonld = null, crumbs = null
 
   // 날짜: 기존 JSON-LD에 실제 발행일(칼럼 Article 등)이 있으면 그 값을 우선
   const dates = pageDates(file);
-  const published = jsonld && !Array.isArray(jsonld) && typeof jsonld.datePublished === "string" ? jsonld.datePublished : dates.datePublished;
+  const primaryLd = Array.isArray(jsonld) ? jsonld[0] : jsonld; // 배열이면 첫 항목(Article 등)을 날짜 기준으로
+  const published = primaryLd && typeof primaryLd.datePublished === "string" ? primaryLd.datePublished : dates.datePublished;
   const modified = dates.dateModified < published ? published : dates.dateModified;
   const dateLabel = modified.replace(/-/g, ".");
 
   // JSON-LD: 기존 객체에 날짜 추가(Organization 제외) → 없으면 WebPage 추가, 브레드크럼은 별도 블록
-  const datable = jsonld && !Array.isArray(jsonld) && jsonld["@type"] !== "Organization";
+  const datable = !!primaryLd && primaryLd["@type"] !== "Organization";
   const ld = [];
-  if (jsonld) ld.push(datable ? { ...jsonld, datePublished: published, dateModified: modified } : jsonld);
+  if (Array.isArray(jsonld)) ld.push({ ...jsonld[0], datePublished: published, dateModified: modified }, ...jsonld.slice(1));
+  else if (jsonld) ld.push(datable ? { ...jsonld, datePublished: published, dateModified: modified } : jsonld);
   if (!datable) ld.push({ "@context": "https://schema.org", "@type": "WebPage", name: title, description: desc, url, datePublished: published, dateModified: modified, inLanguage: "ko-KR" });
   const trail = isHome ? null : crumbs || crumbsFor(file, title);
   if (trail && trail.length > 1) ld.push(crumbsJsonld(trail, url));
@@ -159,6 +167,7 @@ ${ldScripts}
       <a href="index.html#regions">지역별 안내</a>
       <a href="reviews.html">수강 후기</a>
       <a href="guide.html">리더십 칼럼</a>
+      <a href="corporate.html">기업교육</a>
       <a class="nav-cta" href="#consult">상담 신청</a>
       <details class="mnav">
         <summary aria-label="메뉴 열기">☰</summary>
@@ -169,6 +178,7 @@ ${ldScripts}
           <a href="index.html#regions">지역별 안내</a>
           <a href="reviews.html">수강 후기</a>
           <a href="guide.html">리더십 칼럼</a>
+          <a href="corporate.html">기업교육</a>
           <a href="#consult">상담 신청</a>
         </div>
       </details>
@@ -307,7 +317,7 @@ function galleryHtml(count = 4, title = "교육 현장") {
 function consultSection(preset = {}) {
   const courseOpts = Object.values(COURSES)
     .map((c) => `<option value="${c.name}"${preset.course === c.slug ? " selected" : ""}>${c.name} (${c.code})</option>`)
-    .join("");
+    .join("") + `<option value="기업 맞춤 교육"${preset.course === "corporate" ? " selected" : ""}>기업 맞춤 교육 (사내·단체)</option>`;
   const regionOpts = Object.entries(REGIONS)
     .map(([slug, r]) => `<option value="${r.name}"${preset.region === slug ? " selected" : ""}>${r.name}</option>`)
     .join("");
@@ -467,6 +477,15 @@ function buildIndex() {
 </section>`;
 
   const body = `
+<section class="section" id="concerns">
+  <div class="wrap">
+    <h2 class="sec-title">이런 고민으로 찾아오셨나요</h2>
+    <p class="sec-sub">교육 이름보다 지금 겪는 문제로 찾는 분이 많습니다. 해당하는 고민을 누르면 원인과 해결 방향을 정리한 글로 이동합니다.</p>
+    <div class="chip-grid">${TOPICS.filter((t) => t.home).map((t) => `<a class="chip" href="${t.slug}.html">${t.chip || t.keyword}</a>`).join("\n")}</div>
+    <p style="margin-top:22px"><a class="btn btn-green" href="corporate.html">기업 맞춤 교육 안내 →</a> <a href="corporate.html#topics" style="margin-left:14px;font-weight:700;text-decoration:underline">주제별 안내 전체 보기</a></p>
+  </div>
+</section>
+
 ${why5Html()}
 
 <section class="section" id="courses">
@@ -1347,8 +1366,8 @@ function guideCard(g) {
 }
 
 function buildGuideIndex() {
-  const refs = GUIDES.slice(0, 4);
-  const cols = GUIDES.slice(4);
+  const refs = GUIDES_REF;
+  const cols = GUIDES_COL;
   const hero = `<section class="hero hero-sm">
   <div class="wrap hero-inner">
     <p class="hero-kicker">Leadership Column</p>
@@ -1368,6 +1387,14 @@ function buildGuideIndex() {
     <h2 class="sec-title">리더의 고민에 답하다</h2>
     <p class="sec-sub">발표 불안부터 위임, 동기부여, CEO 네트워킹까지 — 과정별 전문 칼럼입니다.</p>
     <div class="guide-grid">${cols.map(guideCard).join("\n")}</div>
+  </div>
+</section>
+<section class="section">
+  <div class="wrap">
+    <h2 class="sec-title">교육을 했는데 왜 달라지지 않을까</h2>
+    <p class="sec-sub">팀장 교육, 피드백 교육, 성과관리 교육을 하고도 조직이 그대로인 이유를 다룬 글입니다. 기업교육 담당자와 경영자를 위해 썼습니다.</p>
+    <div class="guide-grid">${GUIDES_INHOUSE.map(guideCard).join("\n")}</div>
+    <p style="margin-top:22px"><a class="btn btn-green" href="corporate.html">기업 맞춤 교육 안내 →</a></p>
   </div>
 </section>
 ${consultSection()}`;
@@ -1906,8 +1933,188 @@ img{-webkit-user-drag:none;user-drag:none}
 // ------------------------------------------------------------
 // 생성 실행
 // ------------------------------------------------------------
+// ------------------------------------------------------------
+// 기업 맞춤 교육 허브 + 검색어별 주제 페이지 (2026-09)
+//   원칙: 과정을 설명하지 않고 조직이 겪는 문제 → 원인 → 해결 방향 순서로 쓴다.
+// ------------------------------------------------------------
+const TOPIC_GROUPS = [...new Set(TOPICS.map((t) => t.group))];
+function topicChips(group) {
+  return TOPICS.filter((t) => t.group === group).map((t) => `<a class="chip" href="${t.slug}.html">${t.keyword}</a>`).join("\n");
+}
+
+const CORP_MOMENTS = [
+  ["조직 개편 직후", "부서가 합쳐지거나 나뉘면 협업과 소통이 한동안 막힙니다. 개편의 이유를 다시 설명하고 역할 경계를 정하는 리더십이 필요한 시기입니다."],
+  ["리더가 바뀌었을 때", "새 임원, 새 팀장이 오면 비전을 다시 세우고 실행으로 옮겨야 합니다. 임원 워크숍이나 조직문화 정비를 찾게 되는 때입니다."],
+  ["성과가 떨어졌을 때", "성과관리를 하는데 KPI가 그대로라면 리더의 코칭과 피드백, 목표관리 방식을 봐야 합니다. 교육 문의가 많은 상황입니다."],
+  ["사람을 키워야 할 때", "승진자, 신임 팀장, 차세대 리더를 세워야 하는데 조직 안에 그것을 가르칠 사람이 없을 때입니다."],
+];
+
+const CORP_FAQ = [
+  ["인원이 몇 명이어야 진행할 수 있나요?", "정해진 최소 인원은 없습니다. 팀장 8명 워크숍부터 전 직원 대상 과정까지 진행하며, 인원과 대상에 따라 구성이 달라지므로 상담에서 먼저 상황을 여쭙습니다."],
+  ["4시간짜리, 하루짜리 특강도 되나요?", "됩니다. 다만 4시간이든 16시간이든 시간부터 정하지 않고, 어떤 변화가 필요한지를 먼저 봅니다. 그에 맞는 시간과 회차를 제안드립니다."],
+  ["과정 목록이 따로 있나요?", "홈페이지에 보이는 과정은 큰 분류입니다. 실제로는 리더십·코칭·소통·세일즈·프레젠테이션·사고력 등 150여 개 모듈을 조직 상황에 맞춰 조합합니다. 그래서 같은 이름의 교육이라도 회사마다 내용이 다릅니다."],
+  ["비용은 어떻게 산정되나요?", "대상 인원, 시간, 회차, 사전 진단 범위에 따라 달라집니다. 상담 후 구성안과 함께 견적을 드립니다."],
+  ["서울 외 지역도 가능한가요?", "전국 지사가 있어 지방 사업장에서도 진행합니다. 지역 상황은 문의 시 함께 안내드립니다."],
+];
+
+function buildCorporate() {
+  const hero = `<section class="hero hero-sm">
+  <div class="wrap hero-inner">
+    <p class="hero-kicker">Corporate Training · 기업 맞춤 교육</p>
+    <h1>교육 과정을 팔지 않습니다.<br>조직의 문제부터 봅니다.</h1>
+    <p class="hero-sub">팀장 교육, 성과관리, 코칭·피드백, 조직문화, 변화 리더십, 세일즈까지. <br>데일카네기 기업교육은 사전 진단으로 시작해 회사마다 다르게 설계합니다.</p>
+    <div class="hero-actions">
+      <a class="btn btn-gold" href="#consult">기업교육 상담 신청</a>
+      <a class="btn btn-line" href="#topics">주제별 안내 보기</a>
+    </div>
+  </div>
+</section>`;
+  const body = `
+<section class="section">
+  <div class="wrap">
+    <h2 class="sec-title">기업이 교육을 찾는 순간은 정해져 있습니다</h2>
+    <p class="sec-sub">교육 담당자가 "리더십 교육"을 검색하는 일은 생각보다 드뭅니다. 대부분 조직에 무슨 일이 생겼을 때, 그 문제의 이름으로 찾습니다.</p>
+    <div class="perk-grid">
+      ${CORP_MOMENTS.map(([t, d], i) => `<div><span>0${i + 1}</span><strong>${t}</strong><p>${d}</p></div>`).join("\n")}
+    </div>
+  </div>
+</section>
+
+<section class="section alt">
+  <div class="wrap">
+    <h2 class="sec-title">카탈로그에서 고르지 않고, 진단에서 설계합니다</h2>
+    <p class="sec-sub">"하루 과정 해 주세요"라는 요청을 그대로 받지 않습니다. 회사가 처음 말하는 교육명은 대개 증상의 이름이고, 원인은 들여다봐야 나오기 때문입니다.</p>
+    <div class="two-col" style="margin-top:26px">
+      <div>
+        <h3 class="sec-title-sm">교육이 아니라 하나의 과정입니다</h3>
+        <p>데일카네기는 구성원의 역량 개발을 한 번의 행사가 아니라 여정으로 봅니다. 진단으로 시작해 현업 적용과 점검까지 이어지는 다섯 단계를 회사의 성과 목표에 맞춰 짭니다. 4시간 특강도 하고 16시간 과정도 하지만, 시간부터 정하지는 않습니다.</p>
+        <ol class="step-list" style="margin-top:16px">
+          <li><strong>사전 진단</strong> — 담당자·리더·구성원 인터뷰로 반복되는 문제와 그 원인을 나눕니다.</li>
+          <li><strong>설계</strong> — 진단 결과에 맞춰 모듈을 조합합니다. 교육으로 풀리지 않는 제도 문제는 따로 짚어 드립니다.</li>
+          <li><strong>훈련</strong> — 강의보다 실습과 코칭 중심으로 진행합니다.</li>
+          <li><strong>현업 적용</strong> — 회차 사이에 실제 팀에서 해 보는 과제를 둡니다.</li>
+          <li><strong>점검</strong> — 무엇이 달라졌는지 확인하고 다음 단계를 정합니다.</li>
+        </ol>
+      </div>
+      <div>
+        <h3 class="sec-title-sm">150여 개 모듈, 110년 넘는 사례</h3>
+        <p>홈페이지에 보이는 과정은 큰 분류일 뿐입니다. 실제로는 리더십·코칭·피드백·소통·세일즈·프레젠테이션·비판적 사고 등 150여 개 모듈을 조직 상황에 맞춰 조합합니다. 컨설턴트 한 사람의 경험이 아니라 1912년부터 90여 개국에서 쌓인 기업교육 사례가 설계의 바탕입니다.</p>
+        <h3 class="sec-title-sm" style="margin-top:26px">다룰 수 있는 영역</h3>
+        <ul class="check-list">
+          <li>리더십 · 신임 팀장 · 승진자 · 임원 워크숍</li>
+          <li>성과관리 · 목표관리 · 코칭 · 피드백 · 1:1 면담</li>
+          <li>협업 · 소통 · 갈등 관리 · 세대 차이</li>
+          <li>조직문화 · 비전과 핵심가치 · 변화관리</li>
+          <li>세일즈 · 고객 관계 · 협상 · 비판적 사고</li>
+          <li>프레젠테이션 · 보고 · 자신감 · 스트레스 관리</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="topics">
+  <div class="wrap">
+    <h2 class="sec-title">주제별 안내</h2>
+    <p class="sec-sub">지금 조직에서 겪는 문제를 골라 보십시오. 각 페이지에 원인, 교육으로 풀리는 것과 아닌 것, 관련 글을 정리했습니다.</p>
+    ${TOPIC_GROUPS.map((g) => `<h3 class="sec-title-sm" style="margin-top:28px">${g}</h3><div class="chip-grid">${topicChips(g)}</div>`).join("\n")}
+  </div>
+</section>
+
+<section class="section alt">
+  <div class="wrap">
+    <h2 class="sec-title">교육 담당자들이 상담에서 자주 하는 말</h2>
+    <p class="sec-sub">"교육은 했는데 달라진 게 없어요." 그 이유를 사례로 정리한 글입니다.</p>
+    <div class="guide-grid">${GUIDES_INHOUSE.slice(0, 6).map(guideCard).join("\n")}</div>
+    <p style="margin-top:22px"><a class="btn btn-green" href="guide.html">칼럼 전체 보기 →</a></p>
+  </div>
+</section>
+
+<section class="section" id="faq">
+  <div class="wrap narrow">
+    <h2 class="sec-title">기업교육 진행 방식</h2>
+    <div class="faq-list">
+      ${CORP_FAQ.map(([q, a]) => `<details class="faq-item"><summary>${q}</summary><div class="faq-a"><p>${a}</p></div></details>`).join("\n")}
+    </div>
+    <p class="sec-sub" style="margin-top:26px">공개과정(최고경영자 코스, 데일카네기 코스 등)은 <a href="index.html#courses">과정 안내</a>에서, 지역별 일정은 <a href="index.html#schedule">개강 일정</a>에서 보실 수 있습니다.</p>
+  </div>
+</section>
+${consultSection({ course: "corporate" })}`;
+  return page({
+    file: "corporate.html",
+    title: "기업 맞춤 교육 | 팀장 교육·성과관리·코칭·조직문화·세일즈 사내교육 안내",
+    desc: "데일카네기 기업교육은 과정 카탈로그가 아니라 사전 진단에서 시작합니다. 팀장 교육, 성과관리·코칭·피드백, 협업·소통, 조직문화·변화관리, 세일즈까지 150여 개 모듈로 회사마다 다르게 설계합니다.",
+    hero,
+    body,
+    jsonld: {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      datePublished: "2026-09-05",
+      mainEntity: CORP_FAQ.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })),
+    },
+  });
+}
+
+function buildTopic(t) {
+  const related = (t.guides || []).map((s) => GUIDES.find((g) => g.slug === s)).filter(Boolean);
+  const courses = (t.courses || []).map((k) => COURSES[k]).filter(Boolean);
+  const siblings = TOPICS.filter((x) => x.group === t.group && x.slug !== t.slug);
+  const hero = `<section class="hero hero-sm">
+  <div class="wrap hero-inner">
+    <p class="hero-kicker">기업 맞춤 교육 · ${t.group}</p>
+    <h1>${t.h1 || t.keyword}</h1>
+    ${t.sub ? `<p class="hero-sub">${t.sub}</p>` : ""}
+  </div>
+</section>`;
+  const body = `
+<section class="section">
+  <div class="wrap narrow guide-body">
+    <p class="lead">${t.lead}</p>
+    ${t.signs && t.signs.length ? `<h2 class="sec-title-sm">이런 상황이라면</h2>
+    <ul class="check-list">${t.signs.map((s) => `<li>${s}</li>`).join("")}</ul>` : ""}
+    ${t.sections.map((s) => `<h2 class="sec-title-sm">${s.h}</h2>${s.p}`).join("\n")}
+    ${t.faq && t.faq.length ? `<h2 class="sec-title-sm">자주 묻는 질문</h2>
+    <div class="faq-list">${t.faq.map(([q, a]) => `<details class="faq-item"><summary>${q}</summary><div class="faq-a"><p>${a}</p></div></details>`).join("")}</div>` : ""}
+    ${courses.length ? `<div class="guide-cta">
+      <span>관련 공개과정</span>
+      ${courses.map((c) => `<a class="btn btn-green" href="${c.slug}.html">${c.name} →</a>`).join(" ")}
+    </div>` : ""}
+    <p class="sec-sub" style="margin-top:26px">사내 단체교육으로 진행하려면 <a href="corporate.html">기업 맞춤 교육 안내</a>를 보시거나 아래 상담 신청을 이용하십시오.</p>
+  </div>
+</section>
+${related.length ? `<section class="section alt">
+  <div class="wrap">
+    <h2 class="sec-title-sm">함께 읽으면 좋은 글</h2>
+    <div class="guide-grid">${related.map(guideCard).join("\n")}</div>
+  </div>
+</section>` : ""}
+${siblings.length ? `<section class="section">
+  <div class="wrap">
+    <h2 class="sec-title-sm">${t.group} 관련 주제</h2>
+    <div class="chip-grid">${siblings.map((x) => `<a class="chip" href="${x.slug}.html">${x.keyword}</a>`).join("\n")}</div>
+  </div>
+</section>` : ""}
+${consultSection({ course: t.courses && t.courses.length === 1 ? t.courses[0] : "corporate" })}`;
+  const jsonld = [{
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: t.h1 || t.keyword,
+    description: t.desc,
+    datePublished: t.date || "2026-09-05",
+    author: { "@type": "Organization", name: "카네기코스" },
+  }];
+  if (t.faq && t.faq.length) jsonld.push({
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: t.faq.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })),
+  });
+  return page({ file: `${t.slug}.html`, title: t.metaTitle, desc: t.desc, hero, body, jsonld });
+}
+
 const pages = [];
 pages.push(buildIndex());
+pages.push(buildCorporate());
+for (const t of TOPICS) pages.push(buildTopic(t));
 pages.push(buildAbout());
 pages.push(buildReviews());
 pages.push(buildGuideIndex());
@@ -1950,6 +2157,13 @@ const RSS_ITEMS = [
     link: `${BASE_URL}/${g.slug}.html`,
     date: new Date(g.date + "T09:00:00+09:00").toUTCString(),
     desc: g.desc,
+  })),
+  { title: "[기업교육] 기업 맞춤 교육 안내 — 진단에서 시작하는 사내교육", link: `${BASE_URL}/corporate.html`, date: "Sat, 05 Sep 2026 09:00:00 +0900", desc: "팀장 교육, 성과관리·코칭·피드백, 협업·소통, 조직문화·변화관리, 세일즈까지 150여 개 모듈로 회사마다 다르게 설계하는 데일카네기 기업교육." },
+  ...TOPICS.map((t) => ({
+    title: `[기업교육] ${t.h1 || t.keyword}`,
+    link: `${BASE_URL}/${t.slug}.html`,
+    date: new Date((t.date || "2026-09-05") + "T09:00:00+09:00").toUTCString(),
+    desc: t.desc,
   })),
 ];
 const rssItems = RSS_ITEMS.map((it) => `  <item>
