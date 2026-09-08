@@ -1828,7 +1828,8 @@ tr.st-past .td-name a,tr.st-done .td-name a{color:var(--muted)}
 @media(max-width:560px){.dc-logo{height:18px}.brand{gap:9px}}
 
 /* 브랜드 가이드: 본문 양끝 정렬, 강의 사진 흑백 */
-.lead,.narrow p:not(.form-fine):not(.form-done *),.faq-a p,.faq-a li,.endorse-grid blockquote,.why-list p,.cycle-grid p{text-align:justify}
+/* 양쪽 정렬은 한글에서 단어 사이가 벌어져 어색함(2026-09-08 사용자 지시) → 왼쪽 정렬 */
+.lead,.narrow p,.faq-a p,.faq-a li,.endorse-grid blockquote,.why-list p,.cycle-grid p{text-align:left}
 .gallery img{filter:grayscale(1)}
 
 /* endorsements */
