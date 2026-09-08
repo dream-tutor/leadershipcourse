@@ -20,6 +20,38 @@ const fee = (v) => (v == null ? "미정" : v.toLocaleString("ko-KR") + "원");
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 // ------------------------------------------------------------
+// 개강 상태 — 빌드 시점(KST) 기준. 페이지에서도 접속 시점 기준으로 다시 계산(레이아웃 하단 스크립트)
+//   open이 "MM.DD"가 아니면(예: "9월 중") 일정 미정(tba)
+//   접수 중(open) → 개강 7일 이내(soon, 접수는 시작 일주일 전까지) → 개강 완료(past) → 수료일 경과(done)
+// ------------------------------------------------------------
+const TODAY_KST = (() => { const d = new Date(Date.now() + 9 * 3600 * 1000); return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()); })();
+function schedDate(mmdd, ref = TODAY_KST) {
+  const m = /^(\d{1,2})\.(\d{1,2})$/.exec(String(mmdd || "").trim());
+  if (!m) return null;
+  const rd = new Date(ref);
+  const mo = +m[1] - 1;
+  let y = rd.getUTCFullYear();
+  if (mo - rd.getUTCMonth() < -6) y += 1;      // 10월에 보는 01.11 → 이듬해
+  else if (mo - rd.getUTCMonth() > 6) y -= 1;  // 1월에 보는 09.08 → 전년
+  return Date.UTC(y, mo, +m[2]);
+}
+const isoDay = (t) => (t == null ? "" : new Date(t).toISOString().slice(0, 10));
+function schedStatus(r) {
+  const o = schedDate(r.open), c = schedDate(r.close);
+  if (o == null) return { key: "tba", label: "일정 문의" };
+  if (c != null && c < TODAY_KST) return { key: "done", label: "종료" };
+  if (o <= TODAY_KST) return { key: "past", label: "개강 완료" };
+  if (o - TODAY_KST <= 7 * 86400000) return { key: "soon", label: "마감 임박" };
+  return { key: "open", label: "접수 중" };
+}
+const isActive = (r) => { const k = schedStatus(r).key; return k === "open" || k === "soon" || k === "tba"; };
+const openKey = (r) => { const t = schedDate(r.open); return t == null ? "9999" : isoDay(t); };
+const byOpen = (a, b) => openKey(a).localeCompare(openKey(b));
+// 접수 중인 기수 먼저(개강일순) → 이미 개강한 기수는 뒤로
+const bySchedule = (a, b) => (isActive(a) === isActive(b) ? byOpen(a, b) : isActive(a) ? -1 : 1);
+const periodText = (r) => (schedDate(r.open) == null ? `${r.open} 개강 예정 · 세부 일정은 문의 시 안내` : `${r.open} 개강 ~ ${r.close} 수료 (${r.weeks})`);
+
+// ------------------------------------------------------------
 // 페이지 날짜 — 파일명 시드 기반, 월 단위로만 변동 (주간 랜덤 회전 없음)
 //   dateModified: 이번 달 안의 시드 고정 날짜(1~28일). 아직 오지 않은 날이면 지난달 같은 날.
 //   datePublished: 시드로 2026-07-20 ~ 2026-08-31 사이에 분산 고정.
@@ -214,6 +246,22 @@ ${footer()}
   document.addEventListener('dragstart', function(e){ e.preventDefault(); });
   document.addEventListener('selectstart', function(e){ if(!isFormEl(e.target)) e.preventDefault(); });
 })();
+(function(){
+  // 개강 일정 상태를 접속 시점 기준으로 재계산 — 빌드 이후 개강한 기수도 자동으로 '개강 완료' 표기
+  var rows = document.querySelectorAll('tr[data-open]');
+  if(!rows.length) return;
+  var now = new Date(), today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  var L = { open: '접수 중', soon: '마감 임박', past: '개강 완료', done: '종료' };
+  for(var i = 0; i < rows.length; i++){
+    var tr = rows[i], o = tr.getAttribute('data-open'), c = tr.getAttribute('data-close');
+    if(!o) continue;
+    var ot = Date.parse(o), ct = c ? Date.parse(c) : NaN;
+    if(isNaN(ot)) continue;
+    var k = (!isNaN(ct) && ct < today) ? 'done' : ot <= today ? 'past' : (ot - today <= 7 * 86400000) ? 'soon' : 'open';
+    tr.className = tr.className.replace(/(^|\\s)st-[a-z]+/g, '').trim() + ' st-' + k;
+    var b = tr.querySelector('.st-badge'); if(b) b.textContent = L[k];
+  }
+})();
 </script>
 </body>
 </html>`,
@@ -267,28 +315,31 @@ function why5Html() {
 }
 
 function scheduleTable(rows, { linkRegion = true } = {}) {
-  // 개강일 순 정렬 (같은 날짜면 데이터 순서 유지)
+  // 접수 중인 기수 먼저 개강일순, 이미 개강한 기수는 아래로 (같은 날짜면 데이터 순서 유지)
   const tr = rows
-    .slice().sort((x, y) => x.open.localeCompare(y.open))
+    .slice().sort(bySchedule)
     .map((r) => {
-      const reg = REGIONS[r.region];
+      const st = schedStatus(r);
       const name = linkRegion ? `<a href="${r.region}.html">${r.name}</a>` : r.name;
-      return `<tr>
+      return `<tr class="st-${st.key}" data-open="${isoDay(schedDate(r.open))}" data-close="${isoDay(schedDate(r.close))}">
         <td class="td-name">${name}</td>
+        <td class="td-status"><span class="st-badge">${st.label}</span></td>
         <td>${r.gi ? r.gi + "기" : "-"}</td>
-        <td>${r.open}</td>
-        <td>${r.close}</td>
-        <td>${r.day}</td>
-        <td>${r.weeks}</td>
+        <td>${r.open || "-"}</td>
+        <td>${r.close || "-"}</td>
+        <td>${r.day || "-"}</td>
+        <td>${r.weeks || "-"}</td>
         <td class="td-fee">${fee(r.fee)}</td>
       </tr>`;
     })
     .join("\n");
+  const hasPast = rows.some((r) => !isActive(r));
   return `<p class="table-hint">← 표를 옆으로 밀어서 볼 수 있습니다</p>
   <div class="table-wrap"><table class="sched">
-    <thead><tr><th>과정</th><th>기수</th><th>개강</th><th>수료</th><th>요일</th><th>기간</th><th>수강료</th></tr></thead>
+    <thead><tr><th>과정</th><th>상태</th><th>기수</th><th>개강</th><th>수료</th><th>요일</th><th>기간</th><th>수강료</th></tr></thead>
     <tbody>${tr}</tbody>
-  </table></div>`;
+  </table></div>
+  ${hasPast ? `<p class="table-note">‘개강 완료’는 이미 시작한 기수입니다. 다음 기수 개설 일정은 상담 신청을 남겨 주시면 가장 먼저 안내드립니다.</p>` : ""}`;
 }
 
 // 교육 현장 사진 갤러리 (얼굴 모자이크 처리본)
@@ -419,9 +470,9 @@ function buildIndex() {
   const featuredCards = ["ceo", "dcc"]
     .map((k) => {
       const c = COURSES[k];
-      const rows = SCHEDULE.filter((x) => x.course === k);
+      const rows = SCHEDULE.filter((x) => x.course === k && isActive(x));
       const regionNames = [...new Set(rows.map((x) => REGIONS[x.region].name))];
-      const next = rows.slice().sort((a, b) => a.open.localeCompare(b.open))[0];
+      const next = rows.slice().sort(byOpen).find((x) => schedDate(x.open) != null);
       const stat = !rows.length
         ? "개강 일정은 문의 시 안내"
         : k === "ceo"
@@ -1114,18 +1165,23 @@ ${consultSection({ course: key })}`;
 // ------------------------------------------------------------
 // 지역 모집 과정 카드 (CEO 우선, 이어서 DCC, 나머지)
 const COURSE_ORDER = ["ceo", "dcc", "dcs", "lac", "ltm", "dylp", "hip", "youth", "tla"];
-function regionOffersHtml(slug, rows) {
+function regionOffersHtml(slug, allRows) {
   const r = REGIONS[slug];
+  const rows = allRows.filter(isActive);
+  const past = allRows.filter((x) => !isActive(x));
   if (!rows.length) {
+    const pastText = past.length
+      ? `이미 개강한 기수: ${past.map((x) => `${x.name}${x.gi ? " " + x.gi + "기" : ""}(${x.open} 개강)`).join(", ")}. `
+      : "";
     return `<section class="section" id="offers">
   <div class="wrap narrow">
     <h2 class="sec-title">${r.name} ${YEAR_LABEL} 모집 중인 과정</h2>
-    <p class="sec-sub">현재 ${r.name} 지역에서 접수 중인 기수가 없습니다. 다음 기수 개설 소식은 하단 상담 신청을 남겨 주시면 가장 먼저 안내드립니다.
+    <p class="sec-sub">현재 ${r.name} 지역에서 접수 중인 기수가 없습니다. ${pastText}다음 기수 개설 소식은 하단 상담 신청을 남겨 주시면 가장 먼저 안내드립니다.
     아래 과정별 안내에서 ${r.name} 과정 소개와 전국 개강 일정을 확인하실 수 있습니다.</p>
   </div>
 </section>`;
   }
-  const sorted = rows.slice().sort((a, b) => COURSE_ORDER.indexOf(a.course) - COURSE_ORDER.indexOf(b.course) || a.open.localeCompare(b.open));
+  const sorted = rows.slice().sort((a, b) => COURSE_ORDER.indexOf(a.course) - COURSE_ORDER.indexOf(b.course) || byOpen(a, b));
   let ceoSeen = false;
   const cards = sorted.map((x) => {
     const c = COURSES[x.course] || { code: x.course.toUpperCase(), name: x.name, slug: x.course };
@@ -1134,12 +1190,13 @@ function regionOffersHtml(slug, rows) {
     const href = isMainCeo ? "#ceo-info" : x.course === "ceo" ? "ceo.html" : COMBO_COURSES.includes(x.course) ? comboFile(slug, x.course) : `${c.slug}.html`;
     const title = x.variant ? `${c.name} · ${x.variant}` : c.name;
     const badge = x.course === "ceo" ? "경영자 과정" : x.course === "dcc" ? "모든 성인 대상" : "";
+    const st = schedStatus(x);
     return `<a class="offer-card${x.course === "ceo" ? " primary" : ""}" href="${href}">
-      <div class="offer-head"><span class="course-code">${c.code}</span>${badge ? `<span class="offer-badge">${badge}</span>` : ""}</div>
+      <div class="offer-head"><span class="course-code">${c.code}</span>${badge ? `<span class="offer-badge">${badge}</span>` : ""}${st.key === "soon" ? `<span class="offer-badge soon">${st.label}</span>` : st.key === "tba" ? `<span class="offer-badge tba">개강 ${x.open}</span>` : ""}</div>
       <h3>${title} ${x.gi ? `<span class="gi">${x.gi}기</span>` : ""}</h3>
       <dl class="offer-meta">
-        <div><dt>일정</dt><dd>${x.open} 개강 ~ ${x.close} 수료 (${x.weeks})</dd></div>
-        <div><dt>요일</dt><dd>매주 ${x.day}${x.time ? " " + x.time : ""}</dd></div>
+        <div><dt>일정</dt><dd>${periodText(x)}</dd></div>
+        <div><dt>요일</dt><dd>${x.day ? "매주 " + x.day + (x.time ? " " + x.time : "") : "문의 시 안내"}</dd></div>
         <div><dt>수강료</dt><dd>${fee(x.fee)}</dd></div>
       </dl>
       <span class="course-more">${isMainCeo ? "모집 안내 보기" : "과정 안내 보기"} →</span>
@@ -1159,7 +1216,7 @@ function regionOffersHtml(slug, rows) {
 function dccIntroHtml(slug) {
   const r = REGIONS[slug];
   const b = BRANCH[r.branch];
-  const dccRows = SCHEDULE.filter((x) => x.course === "dcc");
+  const dccRows = SCHEDULE.filter((x) => x.course === "dcc" && isActive(x));
   return `<section class="section alt" id="dcc-intro">
   <div class="wrap narrow">
     <p class="hero-kicker" style="color:var(--gold)">DCC · The Dale Carnegie Course</p>
@@ -1182,8 +1239,10 @@ function buildRegion(slug) {
   const r = REGIONS[slug];
   const b = BRANCH[r.branch];
   const rows = SCHEDULE.filter((s) => s.region === slug);
-  const ceoRows = rows.filter((s) => s.course === "ceo");
-  const mainCeo = ceoRows[0];
+  // 대표 CEO 기수: 정규 CEO 과정(변형 과정 제외) 중 접수 중인 것 우선, 없으면 이미 개강한 기수(개강 완료 표기)
+  const ceoRows = rows.filter((s) => s.course === "ceo" && !s.variant);
+  const mainCeo = ceoRows.find(isActive) || ceoRows[0];
+  const mainCeoPast = !!mainCeo && !isActive(mainCeo);
 
   const courseKinds = [...new Set(rows.map((s) => s.course))];
   const multi = courseKinds.length > 1;
@@ -1208,7 +1267,8 @@ function buildRegion(slug) {
   const infoRows = mainCeo
     ? `<section class="section alt" id="ceo-info">
   <div class="wrap narrow">
-    <h2 class="sec-title">${r.name} 최고경영자 코스 ${mainCeo.gi ? mainCeo.gi + "기" : ""} 모집 안내</h2>
+    <h2 class="sec-title">${r.name} 최고경영자 코스 ${mainCeo.gi ? mainCeo.gi + "기" : ""} ${mainCeoPast ? "안내" : "모집 안내"}</h2>
+    ${mainCeoPast ? `<p class="past-notice"><strong>${mainCeo.gi ? mainCeo.gi + "기는 " : ""}${mainCeo.open} 개강 완료</strong> — 현재 진행 중인 기수로 신규 접수는 마감되었습니다. 다음 기수 개설 일정은 하단 상담 신청을 남겨 주시면 가장 먼저 안내드립니다.</p>` : ""}
     <dl class="info-list">
       <div><dt>지원 대상</dt><dd>국내외 공·사기업 CEO / 기업 및 기관의 임원, 정부 및 주요기관의 공무원·기관장·단체장, 전문직 및 사회 각 분야의 오피니언 리더</dd></div>
       <div><dt>교육 장소</dt><dd>${r.venue}</dd></div>
@@ -1299,7 +1359,7 @@ ${consultSection({ region: slug })}`;
   return page({
     file: `${slug}.html`,
     title: `${r.name} 데일카네기 최고경영자 코스${titleGi} | ${YEAR_LABEL} 모집 안내`,
-    desc: `${r.name} 데일카네기 최고경영자 코스${titleGi} 모집. ${mainCeo ? `2026년 ${mainCeo.open} 개강, 매주 ${mainCeo.day}요일 ${mainCeo.weeks} 과정, 교육비 ${fee(mainCeo.fee)}.` : ""} ${r.venue} · 온라인 상담 신청 접수 중`,
+    desc: `${r.name} 데일카네기 최고경영자 코스${titleGi} ${mainCeoPast ? "안내" : "모집"}. ${mainCeo ? `2026년 ${mainCeo.open} 개강${mainCeoPast ? "(진행 중, 다음 기수 모집 예정)" : ""}, 매주 ${mainCeo.day}요일 ${mainCeo.weeks} 과정, 교육비 ${fee(mainCeo.fee)}.` : ""} ${r.venue} · 온라인 상담 신청 접수 중`,
     hero,
     body,
     jsonld: mainCeo
@@ -1728,6 +1788,18 @@ tbody tr:nth-child(even){background:#fbfaf7}
 tbody tr:hover{background:var(--gold-pale)}
 .td-name a{font-weight:700;color:var(--green);text-decoration:underline;text-underline-offset:3px}
 .td-fee{font-weight:700}
+.td-status{padding-right:8px}
+.st-badge{display:inline-block;font-size:12px;font-weight:800;line-height:1;padding:6px 9px;border-radius:999px;background:#eef4f0;color:var(--green);white-space:nowrap}
+tr.st-soon .st-badge{background:#fff1e6;color:#b4500f}
+tr.st-past .st-badge,tr.st-done .st-badge{background:#ecebe8;color:#7a7a7a}
+tr.st-tba .st-badge{background:#f1f3f2;color:#555}
+tr.st-past td,tr.st-done td{color:var(--muted)}
+tr.st-past .td-name a,tr.st-done .td-name a{color:var(--muted)}
+.table-note{font-size:13px;color:var(--muted);margin:10px 2px 0}
+.past-notice{background:#f5f4f1;border-left:4px solid #b9b5ad;border-radius:8px;padding:12px 16px;margin:0 0 18px;font-size:14.5px;color:#444}
+.past-notice strong{color:#222}
+.offer-badge.soon{background:#fff1e6;color:#b4500f}
+.offer-badge.tba{background:#f1f3f2;color:#555}
 .curri tbody td{white-space:normal}
 .td-week{font-weight:800;color:var(--green);white-space:nowrap}
 

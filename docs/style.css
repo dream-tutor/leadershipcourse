@@ -150,6 +150,18 @@ tbody tr:nth-child(even){background:#fbfaf7}
 tbody tr:hover{background:var(--gold-pale)}
 .td-name a{font-weight:700;color:var(--green);text-decoration:underline;text-underline-offset:3px}
 .td-fee{font-weight:700}
+.td-status{padding-right:8px}
+.st-badge{display:inline-block;font-size:12px;font-weight:800;line-height:1;padding:6px 9px;border-radius:999px;background:#eef4f0;color:var(--green);white-space:nowrap}
+tr.st-soon .st-badge{background:#fff1e6;color:#b4500f}
+tr.st-past .st-badge,tr.st-done .st-badge{background:#ecebe8;color:#7a7a7a}
+tr.st-tba .st-badge{background:#f1f3f2;color:#555}
+tr.st-past td,tr.st-done td{color:var(--muted)}
+tr.st-past .td-name a,tr.st-done .td-name a{color:var(--muted)}
+.table-note{font-size:13px;color:var(--muted);margin:10px 2px 0}
+.past-notice{background:#f5f4f1;border-left:4px solid #b9b5ad;border-radius:8px;padding:12px 16px;margin:0 0 18px;font-size:14.5px;color:#444}
+.past-notice strong{color:#222}
+.offer-badge.soon{background:#fff1e6;color:#b4500f}
+.offer-badge.tba{background:#f1f3f2;color:#555}
 .curri tbody td{white-space:normal}
 .td-week{font-weight:800;color:var(--green);white-space:nowrap}
 

@@ -20,7 +20,7 @@
 <meta name="naver-site-verification" content="dbd104a111caeca5379e2fd4b5e27f55a5eec692">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230c3b2e'/%3E%3Ctext x='32' y='45' font-size='34' font-weight='bold' text-anchor='middle' fill='%23c6a15b' font-family='Arial'%3EC%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<link rel="stylesheet" href="style.css?v=mtqu0des">
+<link rel="stylesheet" href="style.css?v=mts19c6y">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","datePublished":"2026-09-05","mainEntity":[{"@type":"Question","name":"인원이 몇 명이어야 진행할 수 있나요?","acceptedAnswer":{"@type":"Answer","text":"정해진 최소 인원은 없습니다. 팀장 8명 워크숍부터 전 직원 대상 과정까지 진행하며, 인원과 대상에 따라 구성이 달라지므로 상담에서 먼저 상황을 여쭙습니다."}},{"@type":"Question","name":"4시간짜리, 하루짜리 특강도 되나요?","acceptedAnswer":{"@type":"Answer","text":"됩니다. 다만 4시간이든 16시간이든 시간부터 정하지 않고, 어떤 변화가 필요한지를 먼저 봅니다. 그에 맞는 시간과 회차를 제안드립니다."}},{"@type":"Question","name":"과정 목록이 따로 있나요?","acceptedAnswer":{"@type":"Answer","text":"홈페이지에 보이는 과정은 큰 분류입니다. 실제로는 리더십·코칭·소통·세일즈·프레젠테이션·사고력 등 150여 개 모듈을 조직 상황에 맞춰 조합합니다. 그래서 같은 이름의 교육이라도 회사마다 내용이 다릅니다."}},{"@type":"Question","name":"비용은 어떻게 산정되나요?","acceptedAnswer":{"@type":"Answer","text":"대상 인원, 시간, 회차, 사전 진단 범위에 따라 달라집니다. 상담 후 구성안과 함께 견적을 드립니다."}},{"@type":"Question","name":"서울 외 지역도 가능한가요?","acceptedAnswer":{"@type":"Answer","text":"전국 지사가 있어 지방 사업장에서도 진행합니다. 지역 상황은 문의 시 함께 안내드립니다."}}],"dateModified":"2026-09-05"}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"홈","item":"https://leadershipcourse.co.kr/"},{"@type":"ListItem","position":2,"name":"기업 맞춤 교육","item":"https://leadershipcourse.co.kr/corporate.html"}]}</script>
 </head>
@@ -359,6 +359,22 @@
   }, true);
   document.addEventListener('dragstart', function(e){ e.preventDefault(); });
   document.addEventListener('selectstart', function(e){ if(!isFormEl(e.target)) e.preventDefault(); });
+})();
+(function(){
+  // 개강 일정 상태를 접속 시점 기준으로 재계산 — 빌드 이후 개강한 기수도 자동으로 '개강 완료' 표기
+  var rows = document.querySelectorAll('tr[data-open]');
+  if(!rows.length) return;
+  var now = new Date(), today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  var L = { open: '접수 중', soon: '마감 임박', past: '개강 완료', done: '종료' };
+  for(var i = 0; i < rows.length; i++){
+    var tr = rows[i], o = tr.getAttribute('data-open'), c = tr.getAttribute('data-close');
+    if(!o) continue;
+    var ot = Date.parse(o), ct = c ? Date.parse(c) : NaN;
+    if(isNaN(ot)) continue;
+    var k = (!isNaN(ct) && ct < today) ? 'done' : ot <= today ? 'past' : (ot - today <= 7 * 86400000) ? 'soon' : 'open';
+    tr.className = tr.className.replace(/(^|\s)st-[a-z]+/g, '').trim() + ' st-' + k;
+    var b = tr.querySelector('.st-badge'); if(b) b.textContent = L[k];
+  }
 })();
 </script>
 </body>
