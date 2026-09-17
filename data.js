@@ -11,6 +11,12 @@ const YEAR_LABEL = "2026 하반기";
 // 비어 있으면 빌드 시 경고가 출력되고, 폼은 데모 모드(시트 기록 없이 완료 화면)로 동작
 const FORM_ENDPOINT = "https://script.google.com/macros/s/AKfycbwM_RUWCIPUWOAheguPujsuIAQ_XcxshA7SIbkLr_IBmOCalGZQI-B3qoZCXZsyeUrB/exec";
 
+// 전화 상담 버튼 번호 — 2026-09-17 사용자 요청으로 추가 (그 전까지는 전화번호 화면 비노출·전부 상담 양식 유도)
+// 헤더·모바일 메뉴·하단 고정 버튼·히어로·모집 요강·푸터의 "전화 상담" 버튼이 모두 이 값을 쓴다. 번호를 바꿀 땐 여기만 고치고 `node build.js`.
+// 반드시 <a href="tel:..."> 링크로 둘 것 — 공용 t.js가 tel: 클릭을 전화 전환으로 집계하고, PC에선 번호 안내 창을 띄운다(자체 팝업 만들지 말 것).
+// ※ 아래 BRANCH의 지사 대표번호(본문 안내·JSON-LD provider telephone)와는 별개 — 그쪽은 건드리지 않는다.
+const PHONE = { display: "010-2635-5114", tel: "01026355114" };
+
 // ------------------------------------------------------------
 // 개강 일정 (2026 하반기) — 2026.09.08 본사 개강일정(24개 과정) 기준 갱신
 // course: 과정 코드 / region: 지역 slug / gi: 기수
@@ -294,4 +300,4 @@ const ALUMNI = [
   { branch: "gwangju",  region: "gwangju",       name: "광주",              acts: ["동문회 이·취임식", "골프대회", "바자회", "리프레쉬 교육 및 명사초청 한마음대잔치(연 1회)", "볼링회", "뮤직동호회", "독서동호회(월 1회)"] },
 ];
 
-module.exports = { BASE_URL, YEAR_LABEL, FORM_ENDPOINT, SCHEDULE, REGIONS, BRANCH, COURSES, REVIEWS, ALUMNI };
+module.exports = { BASE_URL, YEAR_LABEL, FORM_ENDPOINT, PHONE, SCHEDULE, REGIONS, BRANCH, COURSES, REVIEWS, ALUMNI };
