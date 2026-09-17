@@ -1229,7 +1229,7 @@ function dccIntroHtml(slug) {
     <ul class="check-list" style="margin-top:14px">
       <li>대상: 성과 향상과 리더십 역량 증진을 원하는 모든 성인</li>
       <li>구성: 주 1회(3.5시간) × 8주 — 매주 도전 과제를 수행하며 변화를 체감하는 실습형 과정</li>
-      <li>${r.name} 개설: 현재 공개과정 일정은 아래 지역에서 운영 중이며, 기업·단체 단위 ${r.name} 맞춤 개설은 ${b.label}(${b.tel})로 문의하실 수 있습니다</li>
+      <li>${r.name} 개설: 현재 공개과정 일정은 아래 지역에서 운영 중이며, 기업·단체 단위 ${r.name} 맞춤 개설(${b.label} 관할)은 하단 상담 신청이나 전화 상담으로 문의하실 수 있습니다</li>
     </ul>
     ${dccRows.length ? `<h3 class="sec-title-sm" style="margin-top:26px">현재 접수 중인 데일카네기 코스 일정</h3>${scheduleTable(dccRows)}` : ""}
     <p class="sec-sub" style="margin-top:14px"><a href="${comboFile(slug, "dcc")}">${r.name} 데일카네기 코스 안내 →</a> · <a href="dcc.html">DCC 과정 상세(커리큘럼·기대 효과) →</a></p>
