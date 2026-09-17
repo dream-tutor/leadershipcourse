@@ -22,21 +22,8 @@ a{color:inherit;text-decoration:none}
 .brand-word em{font-style:normal;color:var(--gold)}
 .nav{display:flex;align-items:center;gap:22px;font-size:15px;font-weight:600}
 .nav a:hover{color:var(--green)}
-.nav-cta{background:var(--green);color:#fff!important;padding:9px 16px;border-radius:999px;font-size:14px;white-space:nowrap}
+.nav-cta{background:var(--green);color:#fff!important;padding:9px 16px;border-radius:999px;font-size:14px}
 .nav-cta:hover{background:var(--green-2)}
-/* 헤더 전화 상담 (2026-09-17) — 1200px 이상: 헤더 폭을 넓혀 아이콘+글자 / 761~1199px: 아이콘 원형 버튼 / 760px 이하: 숨김(하단 바·메뉴에 있음) */
-.nav-ctas{display:flex;align-items:center;gap:8px;flex:none}
-.nav a.nav-tel{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1.5px solid var(--green);color:var(--green);border-radius:999px;font-size:14px;white-space:nowrap;width:40px;height:40px;padding:0}
-.nav a.nav-tel:hover{background:var(--green);color:#fff}
-.nav-tel-txt{display:none}
-@media(min-width:1200px){
-  .site-header .wrap{max-width:1200px}
-  .nav a.nav-tel{width:auto;height:auto;padding:7.5px 14px 7.5px 12px}
-  .nav-tel-txt{display:inline}
-}
-@media(max-width:1199px){.nav{gap:16px}}
-@media(max-width:1079px) and (min-width:761px){.nav{gap:12px;font-size:14px}}
-.mnav-list a.mnav-tel{display:flex;align-items:center;justify-content:center;gap:6px;border:1.5px solid var(--green);color:var(--green);margin-top:4px;white-space:nowrap}
 .mnav{display:none;position:relative}
 .mnav summary{list-style:none;cursor:pointer;font-size:22px;line-height:1;padding:6px 4px;color:var(--green);user-select:none}
 .mnav summary::-webkit-details-marker{display:none}
@@ -47,7 +34,6 @@ a{color:inherit;text-decoration:none}
 @media(max-width:760px){
   .nav{gap:10px}
   .nav>a:not(.nav-cta){display:none}
-  .nav a.nav-tel{display:none}
   .nav-cta{font-size:13.5px;padding:8px 14px}
   .mnav{display:block}
 }
@@ -97,8 +83,6 @@ a{color:inherit;text-decoration:none}
 .crumbs a{color:var(--muted)}
 .crumbs a:hover{color:var(--green);text-decoration:underline;text-underline-offset:3px}
 .crumbs [aria-current]{color:var(--ink);font-weight:600}
-.crumbs-date,.page-date{font-size:12.5px;color:#8a948e;white-space:nowrap}
-.page-date{text-align:right;padding:0 22px 18px}
 
 /* why */
 .why-list{list-style:none;display:grid;gap:12px;margin-top:26px}
@@ -145,28 +129,16 @@ a{color:inherit;text-decoration:none}
 .offer-meta dt{color:#8a948e;font-weight:700}
 .offer-meta dd{color:var(--ink)}
 
-/* floating cta — PC: 우하단 [전화 상담][상담 신청] / 모바일: 하단 2버튼 바 (전화 상담 2026-09-17 추가) */
-.float-bar{position:fixed;right:16px;bottom:18px;z-index:60;display:flex;align-items:center;gap:10px;transition:.2s}
-.float-bar.hide{opacity:0;pointer-events:none;transform:translateY(8px)}
-.float-cta,.float-tel{display:inline-flex;align-items:center;justify-content:center;gap:7px;font-weight:800;font-size:15px;line-height:1.3;padding:13px 22px;border-radius:999px;box-shadow:0 8px 24px rgba(0,0,0,.28);transition:.2s;white-space:nowrap}
+/* floating cta */
+/* 우하단 [전화 상담][상담 신청] — 전화 버튼은 이 플로팅 하나만 (2026-09-17). 상담 신청만 #consult가 보이면 숨고(opacity) 자리는 유지 */
+.float-bar{position:fixed;right:16px;bottom:18px;z-index:60;display:flex;align-items:center;gap:8px}
+.float-cta,.float-tel{font-weight:800;font-size:15px;padding:13px 22px;border-radius:999px;box-shadow:0 8px 24px rgba(0,0,0,.28);transition:.2s;white-space:nowrap}
 .float-cta{background:var(--gold);color:var(--green-dark)}
-.float-cta:hover{background:var(--gold-soft)}
 .float-tel{background:var(--green);color:#fff}
 .float-tel:hover{background:var(--green-2)}
-.float-tel .ico-tel{color:var(--gold)}
-@media(max-width:760px){
-  .float-bar{left:0;right:0;bottom:0;gap:8px;padding:8px 10px calc(8px + env(safe-area-inset-bottom));background:rgba(255,255,255,.97);border-top:1px solid var(--line);box-shadow:0 -6px 20px rgba(12,59,46,.1)}
-  .float-cta,.float-tel{flex:1;min-width:0;padding:13px 10px;font-size:15.5px;box-shadow:none}
-}
-
-/* 전화 상담 버튼 공통 */
-.ico-tel{flex:none;display:inline-block}
-.btn-tel{display:inline-flex;align-items:center;gap:7px}
-.btn-tel .ico-tel{color:var(--gold)}
-.btn-tel .tel-num{font-weight:800;letter-spacing:.01em}
-.btn-tel .tel-num::before{content:"";display:inline-block;width:1px;height:12px;background:currentColor;opacity:.45;margin:0 9px 0 2px;vertical-align:-1px}
-.hero-sm .hero-actions,.hero-course .hero-actions,.hero-region .hero-actions{margin-top:26px}
-@media(max-width:560px){.hero .btn-tel .tel-num{display:none}}
+@media(max-width:400px){.float-bar{right:12px;bottom:14px}.float-cta,.float-tel{font-size:14.5px;padding:12px 18px}}
+.float-cta:hover{background:var(--gold-soft)}
+.float-cta.hide{opacity:0;pointer-events:none;transform:translateY(8px)}
 
 /* schedule table */
 .table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:#fff;-webkit-overflow-scrolling:touch}
@@ -390,12 +362,9 @@ tr.st-past .td-name a,tr.st-done .td-name a{color:var(--muted)}
 .footer-regions{display:flex;flex-wrap:wrap;gap:8px 6px}
 .footer-regions a{border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:5px 13px;font-size:12.5px;color:#c9d6cf;transition:.15s}
 .footer-regions a:hover{border-color:var(--gold);color:var(--gold)}
-.footer-ctas{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
-.footer-cta{font-size:14px;padding:11px 22px}
-.footer-tel{font-size:14px;padding:11px 20px;border:1.5px solid rgba(255,255,255,.3);color:#fff}
-.footer-tel:hover{border-color:var(--gold);color:var(--gold)}
-@media(max-width:760px){.site-footer{padding-bottom:104px}} /* 모바일 하단 버튼 바에 푸터 끝줄이 가리지 않게 */
+.footer-cta{margin-top:6px;font-size:14px;padding:11px 22px}
 .footer-fine{margin-top:34px;padding-top:18px;border-top:1px solid rgba(255,255,255,.1);color:#71837a;font-size:12.5px}
+.footer-date{display:block;margin-top:6px}
 body{-webkit-user-select:none;-moz-user-select:none;user-select:none}
 input,textarea,select{-webkit-user-select:text;-moz-user-select:text;user-select:text}
 img{-webkit-user-drag:none;user-drag:none}

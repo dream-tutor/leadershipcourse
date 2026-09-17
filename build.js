@@ -1,7 +1,6 @@
 ﻿// ============================================================
 // 데일카네기 공개과정 홍보 사이트 생성기
-// 실행: node build.js  →  ./docs 폴더에 전체 페이지 생성 (GitHub Pages: main 브랜치 /docs)
-// 문의 유도: 상담 신청(팝업 양식) + 전화 상담 버튼(2026-09-17 추가, 번호는 data.js PHONE)
+// 실행: node build.js  →  ./dist 폴더에 전체 페이지 생성
 // ============================================================
 const fs = require("fs");
 const path = require("path");
@@ -19,25 +18,6 @@ fs.mkdirSync(OUT, { recursive: true });
 
 const fee = (v) => (v == null ? "미정" : v.toLocaleString("ko-KR") + "원");
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
-// ------------------------------------------------------------
-// 전화 상담 버튼 (2026-09-17 사용자 요청으로 추가 — 그 전까지는 전화번호 비노출·전부 양식 유도)
-//   번호는 data.js PHONE 한 곳에서만 관리. 반드시 실제 <a href="tel:..."> 링크로 둔다:
-//   공용 t.js가 tel: 클릭을 전화 전환으로 집계하고 PC에선 번호 안내 창을 띄운다(모바일은 바로 통화).
-//   ⚠ 자체 번호 팝업을 만들지 말고, [role=dialog]·.modal·상담 팝업(#consultOv) 안에 넣지 말 것 — t.js가 건너뛴다.
-//   BRANCH의 지사 대표번호(본문 안내·JSON-LD telephone)와는 별개다.
-// ------------------------------------------------------------
-const TEL_HREF = `tel:${PHONE.tel}`;
-const TEL_ICON = `<svg class="ico-tel" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.02-.24 11.36 11.36 0 0 0 3.57.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1.02z"/></svg>`;
-// 번호까지 보이는 전화 버튼 (히어로·푸터). 좁은 화면 히어로에선 번호를 숨기고 "전화 상담"만 (CSS)
-const telBtn = (cls) => `<a class="${cls} btn-tel" href="${TEL_HREF}">${TEL_ICON}<span>전화 상담</span><span class="tel-num">${PHONE.display}</span></a>`;
-// 히어로 상담 버튼 한 쌍 (과정·지역·지역×과정·주제 페이지)
-const heroCtas = () => `<div class="hero-actions">
-      <a class="btn btn-gold" href="#consult">상담 신청</a>
-      ${telBtn("btn btn-line")}
-    </div>`;
-// 모집 요강·지역 안내 '문의·접수' 칸 아래 한 줄
-const telNote = () => `<span class="dd-note">전화 상담 <a href="${TEL_HREF}">${PHONE.display}</a></span>`;
 
 // ------------------------------------------------------------
 // 개강 상태 — 빌드 시점(KST) 기준. 페이지에서도 접속 시점 기준으로 다시 계산(레이아웃 하단 스크립트)
@@ -134,11 +114,11 @@ function crumbsFor(file, title) {
   return t;
 }
 const absUrl = (href) => `${BASE_URL}/${href === "index.html" ? "" : href.replace(/^index\.html/, "")}`;
-function crumbsHtml(trail, dateLabel) {
+function crumbsHtml(trail) {
   const items = trail
     .map((c, i) => (i === trail.length - 1 ? `<li aria-current="page">${esc(c.label)}</li>` : `<li><a href="${c.href}">${esc(c.label)}</a></li>`))
     .join("");
-  return `<nav class="crumbs" aria-label="현재 위치"><div class="wrap"><ol>${items}</ol><span class="crumbs-date">정보 업데이트 ${dateLabel}</span></div></nav>`;
+  return `<nav class="crumbs" aria-label="현재 위치"><div class="wrap"><ol>${items}</ol></div></nav>`;
 }
 function crumbsJsonld(trail, pageUrl) {
   return {
@@ -177,8 +157,7 @@ function page({ file, title, desc, body, hero = "", jsonld = null, crumbs = null
   if (trail && trail.length > 1) ld.push(crumbsJsonld(trail, url));
   const ldScripts = ld.map((o) => `<script type="application/ld+json">${JSON.stringify(o)}</script>`).join("\n");
 
-  const crumbsBlock = trail && trail.length > 1 ? crumbsHtml(trail, dateLabel) : "";
-  const homeDate = isHome ? `<p class="page-date wrap">정보 업데이트 ${dateLabel}</p>` : "";
+  const crumbsBlock = trail && trail.length > 1 ? crumbsHtml(trail) : "";
 
   return {
     file,
@@ -220,10 +199,7 @@ ${ldScripts}
       <a href="reviews.html">수강 후기</a>
       <a href="guide.html">리더십 칼럼</a>
       <a href="corporate.html">기업교육</a>
-      <span class="nav-ctas">
-        <a class="nav-tel" href="${TEL_HREF}" title="전화 상담 ${PHONE.display}" aria-label="전화 상담 ${PHONE.display}">${TEL_ICON}<span class="nav-tel-txt">전화 상담</span></a>
-        <a class="nav-cta" href="#consult">상담 신청</a>
-      </span>
+      <a class="nav-cta" href="#consult">상담 신청</a>
       <details class="mnav">
         <summary aria-label="메뉴 열기">☰</summary>
         <div class="mnav-list">
@@ -234,7 +210,6 @@ ${ldScripts}
           <a href="reviews.html">수강 후기</a>
           <a href="guide.html">리더십 칼럼</a>
           <a href="corporate.html">기업교육</a>
-          <a class="mnav-tel" href="${TEL_HREF}">${TEL_ICON}전화 상담 ${PHONE.display}</a>
           <a href="#consult">상담 신청</a>
         </div>
       </details>
@@ -245,17 +220,16 @@ ${hero}
 <main>
 ${crumbsBlock}
 ${body}
-${homeDate}
 </main>
-${footer()}
+${footer(dateLabel)}
 <div class="float-bar">
-  <a class="float-tel" href="${TEL_HREF}">${TEL_ICON}<span>전화 상담</span></a>
+  <a class="float-tel" href="tel:${PHONE.tel}" aria-label="전화 상담 ${PHONE.display}">전화 상담</a>
   <a class="float-cta" href="#consult">상담 신청</a>
 </div>
 <script defer src="https://xn--vb0by3y5wigqb.com/t.js" data-site="carnegie"></script>
 <script>
 (function(){
-  var fc = document.querySelector('.float-bar');
+  var fc = document.querySelector('.float-cta');
   var consult = document.getElementById('consult');
   if(!fc || !consult || !('IntersectionObserver' in window)) return;
   new IntersectionObserver(function(en){ fc.classList.toggle('hide', en[0].isIntersecting); }).observe(consult);
@@ -295,7 +269,8 @@ ${footer()}
   };
 }
 
-function footer() {
+// 정보 업데이트 표기는 푸터 맨 아래 줄 (2026-09-17 사용자 지시 — 과외 사이트와 같이 브레드크럼·홈 본문 끝에서 내림)
+function footer(dateLabel = "") {
   const regionLinks = Object.entries(REGIONS)
     .map(([slug, r]) => `<a href="${slug}.html">${r.name}</a>`)
     .join("\n");
@@ -307,17 +282,14 @@ function footer() {
         <img class="footer-logo" src="assets/dc-logo-white.png" alt="Dale Carnegie" width="900" height="229">
         <p class="footer-logo-cap">데일카네기 공개과정 안내</p>
         <p>Since 1912, 전 세계 90여 개국 900만 명이 수료한 <br>세계 최고의 성인교육 프로그램. <br>대한민국에서는 1992년부터 함께해 왔습니다.</p>
-        <div class="footer-ctas">
-          <a class="btn btn-gold footer-cta" href="#consult">상담 신청하기</a>
-          ${telBtn("btn footer-tel")}
-        </div>
+        <a class="btn btn-gold footer-cta" href="#consult">상담 신청하기</a>
       </div>
       <div class="footer-branches">
         <h3>지역별 과정 안내</h3>
         <div class="footer-regions">${regionLinks}</div>
       </div>
     </div>
-    <p class="footer-fine">데일카네기 공개과정 안내 페이지 · 과정 일정과 수강료는 사정에 따라 변경될 수 있습니다. 문의는 상담 신청 양식이나 전화(${PHONE.display})로 해 주세요.</p>
+    <p class="footer-fine">데일카네기 공개과정 안내 페이지 · 과정 일정과 수강료는 사정에 따라 변경될 수 있습니다. 문의는 상담 신청 양식을 이용해 주세요.${dateLabel ? `<span class="footer-date">정보 업데이트 ${dateLabel}</span>` : ""}</p>
   </div>
 </footer>`;
 }
@@ -545,7 +517,6 @@ function buildIndex() {
     <div class="hero-actions">
       <a class="btn btn-gold" href="#schedule">${YEAR_LABEL} 개강 일정 보기</a>
       <a class="btn btn-line" href="#courses">과정 안내</a>
-      ${telBtn("btn btn-line")}
     </div>
   </div>
 </section>
@@ -849,7 +820,7 @@ function admissionHtml() {
       <div><dt>접수 기간</dt><dd>${CC.ADMISSION.deadline}</dd></div>
       <div><dt>모집 절차</dt><dd>${CC.ADMISSION.apply}</dd></div>
       <div><dt>환불 규정</dt><dd><ul class="refund-list">${CC.ADMISSION.refund.map(([k, v]) => `<li><span>${k}</span>${v}</li>`).join("")}</ul></dd></div>
-      <div><dt>문의·접수</dt><dd><a href="#consult">하단 상담 신청 양식으로 접수해 주세요 →</a>${telNote()}</dd></div>
+      <div><dt>문의·접수</dt><dd><a href="#consult">하단 상담 신청 양식으로 접수해 주세요 →</a></dd></div>
     </dl>
   </div>
 </section>`;
@@ -1091,7 +1062,6 @@ function buildCourse(key) {
     <p class="hero-kicker">${c.code} · ${esc(c.eng)}</p>
     <h1>${c.name}</h1>
     <p class="hero-sub">${c.tag}</p>
-    ${heroCtas()}
   </div>
 </section>`;
 
@@ -1293,7 +1263,6 @@ function buildRegion(slug) {
     <p class="hero-kicker">Since 1992 · ${r.name} 개설 과정 안내</p>
     <h1>${heroTitle}</h1>
     <p class="hero-sub">${heroSub}</p>
-    ${heroCtas()}
   </div>
 </section>`;
 
@@ -1309,7 +1278,7 @@ function buildRegion(slug) {
       <div><dt>교 육 비</dt><dd>${fee(mainCeo.fee)} (1인)${mainCeo.includes ? `<br><span class="dd-note">포함: ${mainCeo.includes}</span>` : ""}</dd></div>
       <div><dt>접수 기간</dt><dd>교육 시작일 일주일 전까지 &nbsp;※ 조기 마감될 수 있습니다</dd></div>
       <div><dt>모집 절차</dt><dd>수강신청 → 서류심사 → 결과 개별안내 → 수강료 납부 → 등록완료 (약 1주일 소요)</dd></div>
-      <div><dt>문의·접수</dt><dd><a href="#consult">하단 상담 신청 양식으로 접수해 주세요 →</a>${telNote()}</dd></div>
+      <div><dt>문의·접수</dt><dd><a href="#consult">하단 상담 신청 양식으로 접수해 주세요 →</a></dd></div>
     </dl>
   </div>
 </section>`
@@ -1570,7 +1539,6 @@ function buildCombo(regionSlug, courseKey) {
     <p class="hero-kicker">${r.name} · ${c.code} · ${esc(c.eng)}</p>
     <h1>${r.name} ${c.name}</h1>
     <p class="hero-sub">${c.tag}</p>
-    ${heroCtas()}
   </div>
 </section>`;
 
@@ -1694,21 +1662,8 @@ a{color:inherit;text-decoration:none}
 .brand-word em{font-style:normal;color:var(--gold)}
 .nav{display:flex;align-items:center;gap:22px;font-size:15px;font-weight:600}
 .nav a:hover{color:var(--green)}
-.nav-cta{background:var(--green);color:#fff!important;padding:9px 16px;border-radius:999px;font-size:14px;white-space:nowrap}
+.nav-cta{background:var(--green);color:#fff!important;padding:9px 16px;border-radius:999px;font-size:14px}
 .nav-cta:hover{background:var(--green-2)}
-/* 헤더 전화 상담 (2026-09-17) — 1200px 이상: 헤더 폭을 넓혀 아이콘+글자 / 761~1199px: 아이콘 원형 버튼 / 760px 이하: 숨김(하단 바·메뉴에 있음) */
-.nav-ctas{display:flex;align-items:center;gap:8px;flex:none}
-.nav a.nav-tel{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1.5px solid var(--green);color:var(--green);border-radius:999px;font-size:14px;white-space:nowrap;width:40px;height:40px;padding:0}
-.nav a.nav-tel:hover{background:var(--green);color:#fff}
-.nav-tel-txt{display:none}
-@media(min-width:1200px){
-  .site-header .wrap{max-width:1200px}
-  .nav a.nav-tel{width:auto;height:auto;padding:7.5px 14px 7.5px 12px}
-  .nav-tel-txt{display:inline}
-}
-@media(max-width:1199px){.nav{gap:16px}}
-@media(max-width:1079px) and (min-width:761px){.nav{gap:12px;font-size:14px}}
-.mnav-list a.mnav-tel{display:flex;align-items:center;justify-content:center;gap:6px;border:1.5px solid var(--green);color:var(--green);margin-top:4px;white-space:nowrap}
 .mnav{display:none;position:relative}
 .mnav summary{list-style:none;cursor:pointer;font-size:22px;line-height:1;padding:6px 4px;color:var(--green);user-select:none}
 .mnav summary::-webkit-details-marker{display:none}
@@ -1719,7 +1674,6 @@ a{color:inherit;text-decoration:none}
 @media(max-width:760px){
   .nav{gap:10px}
   .nav>a:not(.nav-cta){display:none}
-  .nav a.nav-tel{display:none}
   .nav-cta{font-size:13.5px;padding:8px 14px}
   .mnav{display:block}
 }
@@ -1769,8 +1723,6 @@ a{color:inherit;text-decoration:none}
 .crumbs a{color:var(--muted)}
 .crumbs a:hover{color:var(--green);text-decoration:underline;text-underline-offset:3px}
 .crumbs [aria-current]{color:var(--ink);font-weight:600}
-.crumbs-date,.page-date{font-size:12.5px;color:#8a948e;white-space:nowrap}
-.page-date{text-align:right;padding:0 22px 18px}
 
 /* why */
 .why-list{list-style:none;display:grid;gap:12px;margin-top:26px}
@@ -1817,28 +1769,16 @@ a{color:inherit;text-decoration:none}
 .offer-meta dt{color:#8a948e;font-weight:700}
 .offer-meta dd{color:var(--ink)}
 
-/* floating cta — PC: 우하단 [전화 상담][상담 신청] / 모바일: 하단 2버튼 바 (전화 상담 2026-09-17 추가) */
-.float-bar{position:fixed;right:16px;bottom:18px;z-index:60;display:flex;align-items:center;gap:10px;transition:.2s}
-.float-bar.hide{opacity:0;pointer-events:none;transform:translateY(8px)}
-.float-cta,.float-tel{display:inline-flex;align-items:center;justify-content:center;gap:7px;font-weight:800;font-size:15px;line-height:1.3;padding:13px 22px;border-radius:999px;box-shadow:0 8px 24px rgba(0,0,0,.28);transition:.2s;white-space:nowrap}
+/* floating cta */
+/* 우하단 [전화 상담][상담 신청] — 전화 버튼은 이 플로팅 하나만 (2026-09-17). 상담 신청만 #consult가 보이면 숨고(opacity) 자리는 유지 */
+.float-bar{position:fixed;right:16px;bottom:18px;z-index:60;display:flex;align-items:center;gap:8px}
+.float-cta,.float-tel{font-weight:800;font-size:15px;padding:13px 22px;border-radius:999px;box-shadow:0 8px 24px rgba(0,0,0,.28);transition:.2s;white-space:nowrap}
 .float-cta{background:var(--gold);color:var(--green-dark)}
-.float-cta:hover{background:var(--gold-soft)}
 .float-tel{background:var(--green);color:#fff}
 .float-tel:hover{background:var(--green-2)}
-.float-tel .ico-tel{color:var(--gold)}
-@media(max-width:760px){
-  .float-bar{left:0;right:0;bottom:0;gap:8px;padding:8px 10px calc(8px + env(safe-area-inset-bottom));background:rgba(255,255,255,.97);border-top:1px solid var(--line);box-shadow:0 -6px 20px rgba(12,59,46,.1)}
-  .float-cta,.float-tel{flex:1;min-width:0;padding:13px 10px;font-size:15.5px;box-shadow:none}
-}
-
-/* 전화 상담 버튼 공통 */
-.ico-tel{flex:none;display:inline-block}
-.btn-tel{display:inline-flex;align-items:center;gap:7px}
-.btn-tel .ico-tel{color:var(--gold)}
-.btn-tel .tel-num{font-weight:800;letter-spacing:.01em}
-.btn-tel .tel-num::before{content:"";display:inline-block;width:1px;height:12px;background:currentColor;opacity:.45;margin:0 9px 0 2px;vertical-align:-1px}
-.hero-sm .hero-actions,.hero-course .hero-actions,.hero-region .hero-actions{margin-top:26px}
-@media(max-width:560px){.hero .btn-tel .tel-num{display:none}}
+@media(max-width:400px){.float-bar{right:12px;bottom:14px}.float-cta,.float-tel{font-size:14.5px;padding:12px 18px}}
+.float-cta:hover{background:var(--gold-soft)}
+.float-cta.hide{opacity:0;pointer-events:none;transform:translateY(8px)}
 
 /* schedule table */
 .table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:#fff;-webkit-overflow-scrolling:touch}
@@ -2062,12 +2002,9 @@ tr.st-past .td-name a,tr.st-done .td-name a{color:var(--muted)}
 .footer-regions{display:flex;flex-wrap:wrap;gap:8px 6px}
 .footer-regions a{border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:5px 13px;font-size:12.5px;color:#c9d6cf;transition:.15s}
 .footer-regions a:hover{border-color:var(--gold);color:var(--gold)}
-.footer-ctas{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
-.footer-cta{font-size:14px;padding:11px 22px}
-.footer-tel{font-size:14px;padding:11px 20px;border:1.5px solid rgba(255,255,255,.3);color:#fff}
-.footer-tel:hover{border-color:var(--gold);color:var(--gold)}
-@media(max-width:760px){.site-footer{padding-bottom:104px}} /* 모바일 하단 버튼 바에 푸터 끝줄이 가리지 않게 */
+.footer-cta{margin-top:6px;font-size:14px;padding:11px 22px}
 .footer-fine{margin-top:34px;padding-top:18px;border-top:1px solid rgba(255,255,255,.1);color:#71837a;font-size:12.5px}
+.footer-date{display:block;margin-top:6px}
 body{-webkit-user-select:none;-moz-user-select:none;user-select:none}
 input,textarea,select{-webkit-user-select:text;-moz-user-select:text;user-select:text}
 img{-webkit-user-drag:none;user-drag:none}
@@ -2108,7 +2045,6 @@ function buildCorporate() {
     <p class="hero-sub">팀장 교육, 성과관리, 코칭·피드백, 조직문화, 변화 리더십, 세일즈까지. <br>데일카네기 기업교육은 사전 진단으로 시작해 회사마다 다르게 설계합니다.</p>
     <div class="hero-actions">
       <a class="btn btn-gold" href="#consult">기업교육 상담 신청</a>
-      ${telBtn("btn btn-line")}
       <a class="btn btn-line" href="#topics">주제별 안내 보기</a>
     </div>
   </div>
@@ -2208,7 +2144,6 @@ function buildTopic(t) {
     <p class="hero-kicker">기업 맞춤 교육 · ${t.group}</p>
     <h1>${t.h1 || t.keyword}</h1>
     ${t.sub ? `<p class="hero-sub">${t.sub}</p>` : ""}
-    ${heroCtas()}
   </div>
 </section>`;
   const body = `
