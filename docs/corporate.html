@@ -20,7 +20,7 @@
 <meta name="naver-site-verification" content="dbd104a111caeca5379e2fd4b5e27f55a5eec692">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230c3b2e'/%3E%3Ctext x='32' y='45' font-size='34' font-weight='bold' text-anchor='middle' fill='%23c6a15b' font-family='Arial'%3EC%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<link rel="stylesheet" href="style.css?v=mu5eo2fx">
+<link rel="stylesheet" href="style.css?v=mu6e2m4c">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","datePublished":"2026-09-05","mainEntity":[{"@type":"Question","name":"인원이 몇 명이어야 진행할 수 있나요?","acceptedAnswer":{"@type":"Answer","text":"정해진 최소 인원은 없습니다. 팀장 8명 워크숍부터 전 직원 대상 과정까지 진행하며, 인원과 대상에 따라 구성이 달라지므로 상담에서 먼저 상황을 여쭙습니다."}},{"@type":"Question","name":"4시간짜리, 하루짜리 특강도 되나요?","acceptedAnswer":{"@type":"Answer","text":"됩니다. 다만 4시간이든 16시간이든 시간부터 정하지 않고, 어떤 변화가 필요한지를 먼저 봅니다. 그에 맞는 시간과 회차를 제안드립니다."}},{"@type":"Question","name":"과정 목록이 따로 있나요?","acceptedAnswer":{"@type":"Answer","text":"홈페이지에 보이는 과정은 큰 분류입니다. 실제로는 리더십·코칭·소통·세일즈·프레젠테이션·사고력 등 150여 개 모듈을 조직 상황에 맞춰 조합합니다. 그래서 같은 이름의 교육이라도 회사마다 내용이 다릅니다."}},{"@type":"Question","name":"비용은 어떻게 산정되나요?","acceptedAnswer":{"@type":"Answer","text":"대상 인원, 시간, 회차, 사전 진단 범위에 따라 달라집니다. 상담 후 구성안과 함께 견적을 드립니다."}},{"@type":"Question","name":"서울 외 지역도 가능한가요?","acceptedAnswer":{"@type":"Answer","text":"전국 지사가 있어 지방 사업장에서도 진행합니다. 지역 상황은 문의 시 함께 안내드립니다."}}],"dateModified":"2026-09-16"}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"홈","item":"https://leadershipcourse.co.kr/"},{"@type":"ListItem","position":2,"name":"기업 맞춤 교육","item":"https://leadershipcourse.co.kr/corporate.html"}]}</script>
 </head>
@@ -239,6 +239,20 @@
       <div class="form-row">
         <label><span class="cap">문의 내용</span><textarea name="문의내용" rows="5" placeholder="문의하시게 된 계기, 관심 있는 교육 주제, 등록·수강 관련 궁금한 점을 자유롭게 남겨 주세요"></textarea></label>
       </div>
+      <div class="form-agree">
+        <input type="checkbox" id="agree" required checked onclick="if(!this.checked){alert('체크를 해제하시면 상담 신청이 어렵습니다.');this.checked=true;}">
+        <label for="agree">개인정보 수집·이용에 동의합니다. <span class="agree-req">(필수)</span></label>
+      </div>
+      <details class="agree-detail">
+        <summary>수집 항목·이용 목적·보유 기간 보기</summary>
+        <div>
+          <b>수집 항목</b>: 이름, 연락처, 소속, 직급(적은 경우), 문의 과정, 문의 지역, 문의 내용(적은 경우). 신청 일시와 신청한 페이지 주소도 함께 저장됩니다.<br>
+          <b>이용 목적</b>: 상담 연락과 과정 일정·수강료·접수 절차 안내<br>
+          <b>보관</b>: 접수 내용은 운영자가 관리하는 구글 시트에 저장되고 담당자에게 메일로 전달됩니다. 서비스 서버가 국외에 있을 수 있습니다.<br>
+          <b>보유 기간</b>: 상담 목적을 이루면 지체 없이 파기합니다. 법령에 보관 의무가 있으면 그 기간 동안만 보관합니다.<br>
+          동의하지 않으실 수 있습니다. 동의하지 않으시면 온라인 상담 신청은 할 수 없고, 전화 상담은 그대로 이용하실 수 있습니다.
+        </div>
+      </details>
       <button type="submit" class="btn btn-gold form-submit">상담 신청하기</button>
       <p class="form-fine">남겨주신 정보는 상담 목적으로만 사용됩니다.</p>
       <div class="form-done" id="consultDone" hidden>
@@ -274,7 +288,7 @@
       if(EP){ var img = new Image(); img.src = EP + '?' + qs; }
       else { console.warn('FORM_ENDPOINT 미설정 — 데모 모드(시트 기록 없음)'); }
       setTimeout(function(){
-        form.querySelectorAll('.form-row, .form-submit, .form-fine').forEach(function(el){ el.style.display = 'none'; });
+        form.querySelectorAll('.form-row, .form-agree, .agree-detail, .form-submit, .form-fine').forEach(function(el){ el.style.display = 'none'; });
         document.getElementById('consultDone').hidden = false;
       }, 700);
     });

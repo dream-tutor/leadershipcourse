@@ -405,6 +405,20 @@ function consultSection(preset = {}) {
       <div class="form-row">
         <label><span class="cap">문의 내용</span><textarea name="문의내용" rows="5" placeholder="문의하시게 된 계기, 관심 있는 교육 주제, 등록·수강 관련 궁금한 점을 자유롭게 남겨 주세요"></textarea></label>
       </div>
+      <div class="form-agree">
+        <input type="checkbox" id="agree" required checked onclick="if(!this.checked){alert('체크를 해제하시면 상담 신청이 어렵습니다.');this.checked=true;}">
+        <label for="agree">개인정보 수집·이용에 동의합니다. <span class="agree-req">(필수)</span></label>
+      </div>
+      <details class="agree-detail">
+        <summary>수집 항목·이용 목적·보유 기간 보기</summary>
+        <div>
+          <b>수집 항목</b>: 이름, 연락처, 소속, 직급(적은 경우), 문의 과정, 문의 지역, 문의 내용(적은 경우). 신청 일시와 신청한 페이지 주소도 함께 저장됩니다.<br>
+          <b>이용 목적</b>: 상담 연락과 과정 일정·수강료·접수 절차 안내<br>
+          <b>보관</b>: 접수 내용은 운영자가 관리하는 구글 시트에 저장되고 담당자에게 메일로 전달됩니다. 서비스 서버가 국외에 있을 수 있습니다.<br>
+          <b>보유 기간</b>: 상담 목적을 이루면 지체 없이 파기합니다. 법령에 보관 의무가 있으면 그 기간 동안만 보관합니다.<br>
+          동의하지 않으실 수 있습니다. 동의하지 않으시면 온라인 상담 신청은 할 수 없고, 전화 상담은 그대로 이용하실 수 있습니다.
+        </div>
+      </details>
       <button type="submit" class="btn btn-gold form-submit">상담 신청하기</button>
       <p class="form-fine">남겨주신 정보는 상담 목적으로만 사용됩니다.</p>
       <div class="form-done" id="consultDone" hidden>
@@ -440,7 +454,7 @@ function consultSection(preset = {}) {
       if(EP){ var img = new Image(); img.src = EP + '?' + qs; }
       else { console.warn('FORM_ENDPOINT 미설정 — 데모 모드(시트 기록 없음)'); }
       setTimeout(function(){
-        form.querySelectorAll('.form-row, .form-submit, .form-fine').forEach(function(el){ el.style.display = 'none'; });
+        form.querySelectorAll('.form-row, .form-agree, .agree-detail, .form-submit, .form-fine').forEach(function(el){ el.style.display = 'none'; });
         document.getElementById('consultDone').hidden = false;
       }, 700);
     });
@@ -1985,6 +1999,13 @@ tr.st-past .td-name a,tr.st-done .td-name a{color:var(--muted)}
 .consult-form input,.consult-form select,.consult-form textarea{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:11px 13px;font-size:15px;font-family:inherit;background:#fbfaf7;color:var(--ink)}
 .consult-form input:focus,.consult-form select:focus,.consult-form textarea:focus{outline:none;border-color:var(--gold);background:#fff}
 .consult-form textarea{resize:vertical}
+.form-agree{display:flex;align-items:flex-start;gap:8px;margin:2px 0 8px}
+.consult-form .form-agree input[type=checkbox]{width:16px;height:16px;min-width:16px;flex:0 0 auto;margin-top:3px;padding:0;border:0;border-radius:3px;background:none;accent-color:var(--green)}
+.consult-form .form-agree label{display:inline;font-size:13.5px;font-weight:700;color:#3a463f;line-height:1.5}
+.form-agree .agree-req{color:#8a948e;font-weight:400}
+.agree-detail{margin:0 0 16px;font-size:12px;color:#6b776f;line-height:1.6}
+.agree-detail summary{cursor:pointer;color:var(--green);font-weight:700}
+.agree-detail>div{margin-top:6px;padding:10px 12px;background:#f8f6f1;border:1px solid var(--line);border-radius:8px}
 .form-submit{width:100%;border:none;cursor:pointer;font-size:16px;padding:15px}
 .form-submit:disabled{opacity:.6;cursor:default}
 .form-fine{margin-top:12px;font-size:12.5px;color:#8a948e;text-align:center}
