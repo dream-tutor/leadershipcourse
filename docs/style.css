@@ -345,6 +345,13 @@ tr.st-past .td-name a,tr.st-done .td-name a{color:var(--muted)}
 .consult-form input,.consult-form select,.consult-form textarea{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:11px 13px;font-size:15px;font-family:inherit;background:#fbfaf7;color:var(--ink)}
 .consult-form input:focus,.consult-form select:focus,.consult-form textarea:focus{outline:none;border-color:var(--gold);background:#fff}
 .consult-form textarea{resize:vertical}
+.form-agree{display:flex;align-items:flex-start;gap:8px;margin:2px 0 8px}
+.consult-form .form-agree input[type=checkbox]{width:16px;height:16px;min-width:16px;flex:0 0 auto;margin-top:3px;padding:0;border:0;border-radius:3px;background:none;accent-color:var(--green)}
+.consult-form .form-agree label{display:inline;font-size:13.5px;font-weight:700;color:#3a463f;line-height:1.5}
+.form-agree .agree-req{color:#8a948e;font-weight:400}
+.agree-detail{margin:0 0 16px;font-size:12px;color:#6b776f;line-height:1.6}
+.agree-detail summary{cursor:pointer;color:var(--green);font-weight:700}
+.agree-detail>div{margin-top:6px;padding:10px 12px;background:#f8f6f1;border:1px solid var(--line);border-radius:8px}
 .form-submit{width:100%;border:none;cursor:pointer;font-size:16px;padding:15px}
 .form-submit:disabled{opacity:.6;cursor:default}
 .form-fine{margin-top:12px;font-size:12.5px;color:#8a948e;text-align:center}
