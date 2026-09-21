@@ -16,12 +16,14 @@ const FORM_ENDPOINT = "https://script.google.com/macros/s/AKfycbwM_RUWCIPUWOAheg
 const PHONE = { display: "010-2635-5114", tel: "01026355114" };
 
 // ------------------------------------------------------------
-// 개강 일정 (2026 하반기) — 2026.09.08 본사 개강일정(24개 과정) 기준 갱신
+// 개강 일정 (2026 하반기) — 2026.09.21 본사 개강일정(16개 과정) 기준 갱신
 // course: 과정 코드 / region: 지역 slug / gi: 기수
 // open이 "MM.DD" 형식이 아니면(예: "9월 중") 세부 일정 미정으로 처리됨
 // 이미 개강한 기수는 지우지 않아도 됨 — 빌드 시 오늘 날짜 기준으로 "개강 완료"로 자동 표기(페이지에서도 접속 시점 기준 재계산)
-// ※ 아래 6개는 09.08 개강일정 목록에 없는 기수(이전 브로슈어 기준) — 확인 후 유지/삭제
-//    화성오산 CEO 42 · 목포 CEO 1 · 여수 CEO 3 · 청주 CEO · 서울 DCC(단기) 3 · 서울 HIP 148
+// ※ 09.21 목록 대비 변경분: 의정부양주포천 28 · 이천여주양평 53 · 수원 67 개강 연기,
+//    대전 CEO 53 → 세종 CEO 53(과정명 변경), 청주 CEO → 대전 CEO 54(기수 부여). 수강료는 16개 모두 이전과 동일.
+// ※ 아래 5개는 09.08·09.21 두 목록 모두에 없는 미개강 기수(이전 브로슈어 기준) — 본사 확인 후 유지/삭제
+//    목포 CEO 1 · 여수 CEO 3 · 서울 DCC(단기) 3 · 서울 HIP 148 · 전북 차세대 경영자 11
 // ------------------------------------------------------------
 const SCHEDULE = [
   { name: "서울 CEO",            course: "ceo",   region: "seoul",         gi: "103", open: "09.08", close: "11.24", day: "화",   weeks: "12주", fee: 4000000, time: "17:00~21:00", includes: "美 데일카네기 인증 수료증 · 교육/훈련비 일체 · 미국 인증 트레이너 강의 & 경영(자) 코칭 · 저녁 만찬(석식) · 워크숍 세미나(1박 2일) · 시스템 다이어리 (부가세 포함)" },
@@ -30,27 +32,30 @@ const SCHEDULE = [
   { name: "고양 CEO",            course: "ceo",   region: "goyang",        gi: "55",  open: "09.14", close: "12.07", day: "월",   weeks: "12주", fee: 2900000, time: "저녁" },
   { name: "화성오산 CEO",         course: "ceo",   region: "hwaseong-osan", gi: "42",  open: "09.14", close: "12.07", day: "월",   weeks: "12주", fee: 2900000, time: "저녁" },
   { name: "대구경북 CEO TLA",     course: "tla",   region: "daegu",         gi: "4",   open: "09.15", close: "10.20", day: "화",   weeks: "6주",  fee: 1300000, variant: "CEO 대상" },
-  { name: "의정부양주포천 CEO",    course: "ceo",   region: "uijeongbu",     gi: "28",  open: "09.15", close: "12.01", day: "화",   weeks: "12주", fee: 2900000, time: "저녁" },
   { name: "광주하남 CEO",         course: "ceo",   region: "gwangju-hanam", gi: "52",  open: "09.15", close: "12.01", day: "화",   weeks: "12주", fee: 2900000 },
   { name: "파주 CEO",            course: "ceo",   region: "paju",          gi: "27",  open: "09.16", close: "11.25", day: "수",   weeks: "12주", fee: 2900000, time: "저녁" },
   { name: "광명 CEO",            course: "ceo",   region: "gwangmyeong",   gi: "57",  open: "09.16", close: "12.02", day: "수",   weeks: "12주", fee: 2900000, time: "18:00~22:00" },
-  { name: "수원 CEO",            course: "ceo",   region: "suwon",         gi: "67",  open: "09.17", close: "12.10", day: "목",   weeks: "12주", fee: 2900000, time: "18:00~22:00" },
   { name: "시흥 CEO",            course: "ceo",   region: "siheung",       gi: "65",  open: "09.17", close: "12.10", day: "목",   weeks: "12주", fee: 2900000, time: "저녁" },
-  { name: "이천여주양평 CEO",      course: "ceo",   region: "icheon",        gi: "53",  open: "09.22", close: "12.15", day: "화",   weeks: "12주", fee: 2900000 },
+  { name: "의정부양주포천 CEO",    course: "ceo",   region: "uijeongbu",     gi: "28",  open: "09.29", close: "12.22", day: "화",   weeks: "12주", fee: 2900000, time: "저녁" },
+  { name: "이천여주양평 CEO",      course: "ceo",   region: "icheon",        gi: "53",  open: "09.29", close: "12.22", day: "화",   weeks: "12주", fee: 2900000 },
   { name: "부산 CEO",            course: "ceo",   region: "busan",         gi: "78",  open: "09.29", close: "12.15", day: "화",   weeks: "12주", fee: 2900000 },
+  { name: "수원 CEO",            course: "ceo",   region: "suwon",         gi: "67",  open: "10.01", close: "12.24", day: "목",   weeks: "12주", fee: 2900000, time: "18:00~22:00" },
   { name: "울산 CEO",            course: "ceo",   region: "ulsan",         gi: "65",  open: "10.01", close: "12.17", day: "목",   weeks: "12주", fee: 2750000 },
   { name: "서울 차세대 경영자",    course: "ceo",   region: "seoul",         gi: "2",   open: "10.01", close: "12.17", day: "목",   weeks: "12주", fee: 3600000, variant: "차세대 경영자 과정" },
-  { name: "서울 DCC",            course: "dcc",   region: "seoul",         gi: "528", open: "10.07", close: "11.25", day: "목",   weeks: "8주",  fee: 1300000 },
+  // 서울 DCC 528: 본사 목록은 요일 '목' 표기이나 10.07·11.25 모두 수요일이고 정확히 8주 간격 — 수요일로 정정
+  { name: "서울 DCC",            course: "dcc",   region: "seoul",         gi: "528", open: "10.07", close: "11.25", day: "수",   weeks: "8주",  fee: 1300000 },
   { name: "목포 CEO",            course: "ceo",   region: "mokpo",         gi: "1",   open: "10.07", close: "12.23", day: "수",   weeks: "12주", fee: 2750000 },
   { name: "여수 CEO",            course: "ceo",   region: "yeosu",         gi: "3",   open: "10.08", close: "12.24", day: "목",   weeks: "12주", fee: 2750000 },
-  { name: "대전 CEO",            course: "ceo",   region: "daejeon",       gi: "53",  open: "10.12", close: "12.28", day: "월",   weeks: "12주", fee: 2900000 },
+  { name: "세종 CEO",            course: "ceo",   region: "sejong",        gi: "53",  open: "10.12", close: "12.28", day: "월",   weeks: "12주", fee: 2900000 },
   { name: "광주 CEO",            course: "ceo",   region: "gwangju",       gi: "64",  open: "10.12", close: "12.28", day: "월",   weeks: "12주", fee: 2900000 },
-  { name: "청주 CEO",            course: "ceo",   region: "cheongju",      gi: "",    open: "10.13", close: "12.29", day: "화",   weeks: "12주", fee: 2900000 },
+  { name: "대전 CEO",            course: "ceo",   region: "daejeon",       gi: "54",  open: "10.13", close: "12.29", day: "화",   weeks: "12주", fee: 2900000 },
   { name: "서울 DCC(단기)",       course: "dcc",   region: "seoul",         gi: "3",   open: "10.16", close: "10.23", day: "금",   weeks: "3일",  fee: 1200000, variant: "단기 집중" },
+  // 서울 TLA 11: 본사 표기(10.26 개강·11.25 수료·수·6주)가 서로 안 맞음 — 10.26은 월요일이고, 수요일 6주 기준이면 10.21 개강. 본사 확인 필요(일단 본사 표기 유지)
   { name: "서울 TLA",            course: "tla",   region: "seoul",         gi: "11",  open: "10.26", close: "11.25", day: "수",   weeks: "6주",  fee: 1300000 },
   { name: "진주 CEO",            course: "ceo",   region: "jinju",         gi: "75",  open: "10.26", close: "01.11", day: "월",   weeks: "12주", fee: 2900000 },
   { name: "대구 DCC",            course: "dcc",   region: "daegu",         gi: "76",  open: "11.03", close: "12.22", day: "화",   weeks: "8주",  fee: 1300000 },
   { name: "대구경북 HIP",         course: "hip",   region: "daegu",         gi: "9",   open: "11.04", close: "12.02", day: "수",   weeks: "5주",  fee: 1300000 },
+  // 서울 DCC 529: 본사 표기(11.12 개강·12.23 수료·수·8주)가 서로 안 맞음 — 11.12는 목요일이고, 간격도 6주뿐. 본사 확인 필요(일단 본사 표기 유지)
   { name: "서울 DCC",            course: "dcc",   region: "seoul",         gi: "529", open: "11.12", close: "12.23", day: "수",   weeks: "8주",  fee: 1300000 },
   // 서울 DYLP: 본사 목록은 개강 11.19 · 수료 11.13(개강보다 앞선 날짜)으로 표기 오류 — 목·금 2일 과정이므로 11.19~11.20으로 추정 기재, 확인 필요
   { name: "서울 DYLP",           course: "dylp",  region: "seoul",         gi: "18",  open: "11.19", close: "11.20", day: "목·금", weeks: "2일",  fee: 800000 },
@@ -82,6 +87,7 @@ const REGIONS = {
   "ulsan":         { name: "울산",           branch: "ulsan",    venue: "울산 지정 강의장 (등록 시 개별 안내)" },
   "jeonbuk":       { name: "전북(전주)",      branch: "jeonbuk",  venue: "전북카네기 인재개발원 (전주시 완산구 석산1길 14, 3층)" },
   "cheonan-asan":  { name: "천안·아산",       branch: "daejeon",  venue: "충남스마트워크센터 5층 (천안시 서북구 축구센터로 163)" },
+  "sejong":        { name: "세종",           branch: "daejeon",  venue: "세종 지정 강의장 (등록 시 개별 안내)" },
   "cheongju":      { name: "청주",           branch: "daejeon",  venue: "청주 지정 강의장 (등록 시 개별 안내)" },
   "yongin":        { name: "용인",           branch: "gyeonggi", venue: "용인카네기강의장 (기흥구 동백중앙로 203 미주타운 504호)" },
   "suwon":         { name: "수원",           branch: "gyeonggi", venue: "경기문화원 빛누리아트홀 (수원시 권선구 호매실로 237)" },
