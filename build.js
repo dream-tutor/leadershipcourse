@@ -49,7 +49,10 @@ const openKey = (r) => { const t = schedDate(r.open); return t == null ? "9999" 
 const byOpen = (a, b) => openKey(a).localeCompare(openKey(b));
 // 접수 중인 기수 먼저(개강일순) → 이미 개강한 기수는 뒤로
 const bySchedule = (a, b) => (isActive(a) === isActive(b) ? byOpen(a, b) : isActive(a) ? -1 : 1);
-const periodText = (r) => (schedDate(r.open) == null ? `${r.open} 개강 예정 · 세부 일정은 문의 시 안내` : `${r.open} 개강 ~ ${r.close} 수료 (${r.weeks})`);
+// 수료일은 화면에 표기하지 않는다 — 개강일만 (2026-09-21 사용자 지시). close는 '종료' 상태 계산에만 쓴다.
+//   단, 주 단위가 아닌 연속 과정(weeks가 "2일" 등)은 교육일 자체가 일정이므로 "11.12~11.13 (2일)"로 표기하고 '매주'를 붙이지 않는다
+const isDayCourse = (r) => /일$/.test(String(r.weeks || ""));
+const periodText = (r) => (schedDate(r.open) == null ? `${r.open} 개강 예정 · 세부 일정은 문의 시 안내` : isDayCourse(r) && r.close ? `${r.open}~${r.close} (${r.weeks})` : `${r.open} 개강 (${r.weeks})`);
 
 // ------------------------------------------------------------
 // 페이지 날짜 — 파일명 시드 기반, 월 단위로만 변동 (주간 랜덤 회전 없음)
@@ -328,7 +331,6 @@ function scheduleTable(rows, { linkRegion = true } = {}) {
         <td class="td-status"><span class="st-badge">${st.label}</span></td>
         <td>${r.gi ? r.gi + "기" : "-"}</td>
         <td>${r.open || "-"}</td>
-        <td>${r.close || "-"}</td>
         <td>${r.day || "-"}</td>
         <td>${r.weeks || "-"}</td>
         <td class="td-fee">${fee(r.fee)}</td>
@@ -338,7 +340,7 @@ function scheduleTable(rows, { linkRegion = true } = {}) {
   const hasPast = rows.some((r) => !isActive(r));
   return `<p class="table-hint">← 표를 옆으로 밀어서 볼 수 있습니다</p>
   <div class="table-wrap"><table class="sched">
-    <thead><tr><th>과정</th><th>상태</th><th>기수</th><th>개강</th><th>수료</th><th>요일</th><th>기간</th><th>수강료</th></tr></thead>
+    <thead><tr><th>과정</th><th>상태</th><th>기수</th><th>개강</th><th>요일</th><th>기간</th><th>수강료</th></tr></thead>
     <tbody>${tr}</tbody>
   </table></div>
   ${hasPast ? `<p class="table-note">‘개강 완료’는 이미 시작한 기수입니다. 다음 기수 개설 일정은 상담 신청을 남겨 주시면 가장 먼저 안내드립니다.</p>` : ""}`;
@@ -1212,7 +1214,7 @@ function regionOffersHtml(slug, allRows) {
       <h3>${title} ${x.gi ? `<span class="gi">${x.gi}기</span>` : ""}</h3>
       <dl class="offer-meta">
         <div><dt>일정</dt><dd>${periodText(x)}</dd></div>
-        <div><dt>요일</dt><dd>${x.day ? "매주 " + x.day + (x.time ? " " + x.time : "") : "문의 시 안내"}</dd></div>
+        <div><dt>요일</dt><dd>${x.day ? (isDayCourse(x) ? "" : "매주 ") + x.day + (x.time ? " " + x.time : "") : "문의 시 안내"}</dd></div>
         <div><dt>수강료</dt><dd>${fee(x.fee)}</dd></div>
       </dl>
       <span class="course-more">${isMainCeo ? "모집 안내 보기" : "과정 안내 보기"} →</span>
@@ -1288,7 +1290,7 @@ function buildRegion(slug) {
     <dl class="info-list">
       <div><dt>지원 대상</dt><dd>국내외 공·사기업 CEO / 기업 및 기관의 임원, 정부 및 주요기관의 공무원·기관장·단체장, 전문직 및 사회 각 분야의 오피니언 리더</dd></div>
       <div><dt>교육 장소</dt><dd>${r.venue}</dd></div>
-      <div><dt>교육 일정</dt><dd>2026년 ${mainCeo.open} 개강 ~ ${mainCeo.close} 수료 · 매주 ${mainCeo.day}요일${mainCeo.time ? " " + mainCeo.time : ""} (${mainCeo.weeks} 과정)</dd></div>
+      <div><dt>교육 일정</dt><dd>2026년 ${mainCeo.open} 개강 · 매주 ${mainCeo.day}요일${mainCeo.time ? " " + mainCeo.time : ""} (${mainCeo.weeks} 과정)</dd></div>
       <div><dt>교 육 비</dt><dd>${fee(mainCeo.fee)} (1인)${mainCeo.includes ? `<br><span class="dd-note">포함: ${mainCeo.includes}</span>` : ""}</dd></div>
       <div><dt>접수 기간</dt><dd>교육 시작일 일주일 전까지 &nbsp;※ 조기 마감될 수 있습니다</dd></div>
       <div><dt>모집 절차</dt><dd>수강신청 → 서류심사 → 결과 개별안내 → 수강료 납부 → 등록완료 (약 1주일 소요)</dd></div>

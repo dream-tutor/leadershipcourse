@@ -24,6 +24,10 @@ const PHONE = { display: "010-2635-5114", tel: "01026355114" };
 //    대전 CEO 53 → 세종 CEO 53(과정명 변경), 청주 CEO → 대전 CEO 54(기수 부여). 수강료는 16개 모두 이전과 동일.
 // ※ 2026-09-21 삭제(폐지 확인): 목포 CEO 1 · 여수 CEO 3 · 서울 DCC(단기) 3 · 서울 HIP 148 · 전북 차세대 경영자 11
 //    — 09.08·09.21 본사 목록 모두에 없어 없어진 과정으로 확인. 목포·여수·청주·전북은 개설 기수 없는 지역으로 남는다(지역 페이지는 유지).
+// ※ 2026-09-21 서울 일정 확정(사용자 확인): DCC 528 10.07(수) 개강 · TLA 11 10.21(수) 개강(본사 목록 10.26은 오기) ·
+//    DYLP 18 11.12(목)~11.13(금) 이틀 교육 · DCC 529(11.12 개강 표기분)는 개설 취소 → 삭제
+// ※ 2026-09-21 12:02 본사 수정 목록(총 15개 과정)과 대조 완료 — 기수 정정: 세종 CEO 53 → 1기, 대전 CEO 54 → 53기.
+//    본사 목록에는 수료일이 없어 close는 이전 목록 값 그대로 둔다(화면에는 표기하지 않고 '종료' 상태 계산에만 사용).
 // ------------------------------------------------------------
 const SCHEDULE = [
   { name: "서울 CEO",            course: "ceo",   region: "seoul",         gi: "103", open: "09.08", close: "11.24", day: "화",   weeks: "12주", fee: 4000000, time: "17:00~21:00", includes: "美 데일카네기 인증 수료증 · 교육/훈련비 일체 · 미국 인증 트레이너 강의 & 경영(자) 코칭 · 저녁 만찬(석식) · 워크숍 세미나(1박 2일) · 시스템 다이어리 (부가세 포함)" },
@@ -42,20 +46,18 @@ const SCHEDULE = [
   { name: "수원 CEO",            course: "ceo",   region: "suwon",         gi: "67",  open: "10.01", close: "12.24", day: "목",   weeks: "12주", fee: 2900000, time: "18:00~22:00" },
   { name: "울산 CEO",            course: "ceo",   region: "ulsan",         gi: "65",  open: "10.01", close: "12.17", day: "목",   weeks: "12주", fee: 2750000 },
   { name: "서울 차세대 경영자",    course: "ceo",   region: "seoul",         gi: "2",   open: "10.01", close: "12.17", day: "목",   weeks: "12주", fee: 3600000, variant: "차세대 경영자 과정" },
-  // 서울 DCC 528: 본사 목록은 요일 '목' 표기이나 10.07·11.25 모두 수요일이고 정확히 8주 간격 — 수요일로 정정
-  { name: "서울 DCC",            course: "dcc",   region: "seoul",         gi: "528", open: "10.07", close: "11.25", day: "수",   weeks: "8주",  fee: 1300000 },
-  { name: "세종 CEO",            course: "ceo",   region: "sejong",        gi: "53",  open: "10.12", close: "12.28", day: "월",   weeks: "12주", fee: 2900000 },
+  // 서울 DCC 528: 본사 목록은 요일 '목' 표기였으나 10.07(수) 개강으로 확정 (2026-09-21 사용자 확인)
+  { name: "서울 DCC",           course: "dcc",   region: "seoul",         gi: "528", open: "10.07", close: "11.25", day: "수",   weeks: "8주",  fee: 1300000 },
+  { name: "세종 CEO",            course: "ceo",   region: "sejong",        gi: "1",   open: "10.12", close: "12.28", day: "월",   weeks: "12주", fee: 2900000 },
   { name: "광주 CEO",            course: "ceo",   region: "gwangju",       gi: "64",  open: "10.12", close: "12.28", day: "월",   weeks: "12주", fee: 2900000 },
-  { name: "대전 CEO",            course: "ceo",   region: "daejeon",       gi: "54",  open: "10.13", close: "12.29", day: "화",   weeks: "12주", fee: 2900000 },
-  // 서울 TLA 11: 본사 표기(10.26 개강·11.25 수료·수·6주)가 서로 안 맞음 — 10.26은 월요일이고, 수요일 6주 기준이면 10.21 개강. 본사 확인 필요(일단 본사 표기 유지)
-  { name: "서울 TLA",            course: "tla",   region: "seoul",         gi: "11",  open: "10.26", close: "11.25", day: "수",   weeks: "6주",  fee: 1300000 },
+  { name: "대전 CEO",            course: "ceo",   region: "daejeon",       gi: "53",  open: "10.13", close: "12.29", day: "화",   weeks: "12주", fee: 2900000 },
+  // 서울 TLA 11: 본사 목록의 10.26 개강은 오기 — 10.21(수) 개강으로 확정 (2026-09-21 사용자 확인, 수요일 6주 → 11.25 수료)
+  { name: "서울 TLA",            course: "tla",   region: "seoul",         gi: "11",  open: "10.21", close: "11.25", day: "수",   weeks: "6주",  fee: 1300000 },
   { name: "진주 CEO",            course: "ceo",   region: "jinju",         gi: "75",  open: "10.26", close: "01.11", day: "월",   weeks: "12주", fee: 2900000 },
   { name: "대구 DCC",            course: "dcc",   region: "daegu",         gi: "76",  open: "11.03", close: "12.22", day: "화",   weeks: "8주",  fee: 1300000 },
   { name: "대구경북 HIP",         course: "hip",   region: "daegu",         gi: "9",   open: "11.04", close: "12.02", day: "수",   weeks: "5주",  fee: 1300000 },
-  // 서울 DCC 529: 본사 표기(11.12 개강·12.23 수료·수·8주)가 서로 안 맞음 — 11.12는 목요일이고, 간격도 6주뿐. 본사 확인 필요(일단 본사 표기 유지)
-  { name: "서울 DCC",            course: "dcc",   region: "seoul",         gi: "529", open: "11.12", close: "12.23", day: "수",   weeks: "8주",  fee: 1300000 },
-  // 서울 DYLP: 본사 목록은 개강 11.19 · 수료 11.13(개강보다 앞선 날짜)으로 표기 오류 — 목·금 2일 과정이므로 11.19~11.20으로 추정 기재, 확인 필요
-  { name: "서울 DYLP",           course: "dylp",  region: "seoul",         gi: "18",  open: "11.19", close: "11.20", day: "목·금", weeks: "2일",  fee: 800000 },
+  // 서울 DYLP 18: 11.12(목)~11.13(금) 이틀 교육으로 확정 (2026-09-21 사용자 확인 — 본사 목록의 개강 11.19는 오기)
+  { name: "서울 DYLP",           course: "dylp",  region: "seoul",         gi: "18",  open: "11.12", close: "11.13", day: "목·금", weeks: "2일",  fee: 800000 },
 ];
 
 // ------------------------------------------------------------
