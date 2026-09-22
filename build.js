@@ -353,7 +353,7 @@ const GALLERY_IMGS = [
   ["class-007.jpg", "수강생 네트워킹과 조별 실습"],
   ["class-009.jpg", "수강생 발표 실습 장면"],
   ["class-005.jpg", "데일카네기 최고경영자과정 교육장"],
-  ["class-004.jpg", "데일카네기 공인 수료증과 리더십 어워드 메달"],
+  // class-004(수료증 사진)은 액자에 수강생 실명이 읽혀 뺐다 — 파일은 assets에 남아 있다
 ];
 
 function galleryHtml(count = 4, title = "교육 현장") {
