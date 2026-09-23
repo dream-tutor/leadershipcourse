@@ -1825,6 +1825,14 @@ tbody td{padding:11px 14px;border-top:1px solid var(--line);white-space:nowrap}
 tbody tr:nth-child(even){background:#fbfaf7}
 tbody tr:hover{background:var(--gold-pale)}
 .td-name a{font-weight:700;color:var(--green);text-decoration:underline;text-underline-offset:3px}
+/* 탭 영역 — 일정표 과정 이름 칸(껍데기 47px / 눌리는 곳 20px) — 홈에만 25개 (2026-09-23)
+   껍데기 안에 inline <a> 하나만 있으면 눌리는 곳이 글자줄뿐이라 손가락으로 놓치기 쉽다.
+   ::after 를 껍데기 전체에 깔아 어디를 눌러도 링크가 열리게 한다. 보이는 건 그대로다.
+   ⚠ :has() 를 쓰지 말 것 — 지원 안 되는 브라우저에서 껍데기에 position 이 안 걸려
+     ::after 가 훨씬 큰 조상 기준으로 퍼지고, 엉뚱한 자리의 클릭을 먹는다. */
+td.td-name{position:relative}
+.td-name>a::after{content:"";position:absolute;inset:0}
+.td-name>a:focus-visible{outline:2px solid var(--green);outline-offset:2px}
 .td-fee{font-weight:700}
 .td-status{padding-right:8px}
 .st-badge{display:inline-block;font-size:12px;font-weight:800;line-height:1;padding:6px 9px;border-radius:999px;background:#eef4f0;color:var(--green);white-space:nowrap}
@@ -2047,6 +2055,67 @@ tr.st-past .td-name a,tr.st-done .td-name a{color:var(--muted)}
 body{-webkit-user-select:none;-moz-user-select:none;user-select:none}
 input,textarea,select{-webkit-user-select:text;-moz-user-select:text;user-select:text}
 img{-webkit-user-drag:none;user-drag:none}
+/* ============================================================
+   모바일 여백 리듬 (2026-09-23)
+   ⚠ 이 블록은 CSS 문자열 맨 끝에 둔다 — 앞에 있는 더 좁은 미디어쿼리
+     (400·560·600·640·680·700·720·760·820·860·900px)를 소스 순서로 이겨야 한다.
+   데스크톱(≥761px)은 이 블록 밖이라 지금 그대로다.
+   다시 조일 일이 생기면 :root 의 숫자만 고치면 272장에 다 먹는다.
+   ============================================================ */
+:root{--sec-y:72px;--head-y:28px;--grid-g:18px;--card-p:26px;--row-y:16px}
+
+@media(max-width:760px){
+  :root{
+    --sec-y:48px;    /* 섹션 상하 — 하한 40px */
+    --head-y:18px;   /* 섹션 머리 → 본문 */
+    --grid-g:12px;   /* 카드 격자 사이 */
+    --card-p:20px;   /* 카드 안쪽 */
+    --row-y:13px;    /* 접이식 줄 상하 — 하한 12px(탭 44px 유지) */
+  }
+
+  /* 히어로 — 헤더가 sticky 라 위 여백을 줄여도 가려지지 않는다 */
+  .hero-inner{padding:56px 22px 52px}
+  .hero-sub{margin-top:14px}
+  .stats-grid{padding:20px 22px;gap:12px}
+
+  /* 섹션 껍데기 */
+  .section{padding:var(--sec-y) 0}
+  .consult{padding:var(--sec-y) 0}
+  .sec-title{margin-bottom:10px}
+  .sec-sub{margin-bottom:var(--head-y)}
+  .sec-title-sm{margin-bottom:12px}
+
+  /* 격자 사이 */
+  .course-grid,.guide-grid,.quote-grid,.offer-grid,.cycle-grid,.gallery{gap:var(--grid-g)}
+  .teaser-grid{gap:22px}
+  .consult-grid{gap:26px}
+  .footer-grid{gap:26px}
+
+  /* 카드 안쪽 */
+  .course-card{padding:var(--card-p)}
+  .guide-card{padding:var(--card-p)}
+  .consult-form{padding:22px}
+
+  /* 접이식 질문 — summary 는 눌러야 하므로 44px 밑으로 내리지 않는다(실측 49px) */
+  .faq-cat{margin-top:24px}
+  .faq-item summary{padding:var(--row-y) 28px var(--row-y) 0}
+  .faq-a{padding-bottom:14px}
+  .sec-title-sm{margin-bottom:10px}
+  tbody th,tbody td{padding:9px 11px}   /* 일정표 칸 — 가로도 같이 좁아진다 */
+  .chip{padding:8px 15px}               /* 알약 40px 유지(44px 기준 아래로 더 내리지 말 것) */
+  .footer-regions{gap:6px 5px}
+
+  /* 푸터 — ⚠ 아래 여백은 플로팅 버튼(높이 약 44px + bottom 18px)을 피하는 값이다.
+     지금 36px 은 그 버튼에 '정보 업데이트' 줄이 가려지는 값이라 같이 늘린다. */
+  .site-footer{padding:40px 0 76px}
+  .footer-word{margin-bottom:12px}
+  .footer-branches h3{margin-bottom:10px}
+  .footer-fine{margin-top:22px;padding-top:14px}
+}
+
+@media(max-width:560px){
+  :root{--sec-y:42px;--head-y:16px;--grid-g:10px;--card-p:18px;--row-y:12px}
+}
 `;
 
 // ------------------------------------------------------------
