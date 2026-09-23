@@ -1798,6 +1798,22 @@ a{color:inherit;text-decoration:none}
 
 /* schedule table */
 .table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:#fff;-webkit-overflow-scrolling:touch}
+/* 옆으로 넘치는 표 — 가장자리 신호 (2026-09-23)
+   덮개 두 장은 내용과 함께 움직이고(local), 그림자 두 장은 상자에 붙어 있다(scroll).
+   왼쪽 끝이면 덮개가 그림자를 덮어 안 보이고, 밀면 드러난다. JS 없음, 미디어쿼리 없음.
+   넘칠 게 없는 표는 두 겹이 겹친 채라 아무 표시도 안 한다 — 그래서 표마다 손볼 필요가 없다.
+   ⚠ 그림자를 radial-gradient(farthest-side …) 로 쓰지 말 것 — 표가 세로로 길면
+     세로 가장자리 쪽 알파가 0 에 가까워져 표 위쪽에서 안 보인다(실측). */
+.table-wrap{
+  overscroll-behavior-x:contain;
+  background:
+    linear-gradient(to right,#fff 55%,rgba(255,255,255,0)) left center/34px 100% no-repeat local,
+    linear-gradient(to left, #fff 55%,rgba(255,255,255,0)) right center/34px 100% no-repeat local,
+    linear-gradient(to right,rgba(17,24,20,.17),rgba(17,24,20,0)) left center/20px 100% no-repeat scroll,
+    linear-gradient(to left, rgba(17,24,20,.17),rgba(17,24,20,0)) right center/20px 100% no-repeat scroll,
+    #fff;
+}
+.table-wrap:focus-visible{outline:2px solid currentColor;outline-offset:2px}
 @media(max-width:680px){
   .table-wrap{position:relative}
   .table-hint{display:block!important}
