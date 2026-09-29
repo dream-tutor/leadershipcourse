@@ -190,6 +190,9 @@ tr.st-past .td-name a,tr.st-done .td-name a{color:var(--muted)}
 .past-notice strong{color:#222}
 .offer-badge.soon{background:#fff1e6;color:#b4500f}
 .offer-badge.tba{background:#f1f3f2;color:#555}
+.offer-badge.past{background:#ecebe8;color:#7a7a7a}
+.offer-card.is-past h3,.offer-card.is-past .offer-meta dd{color:var(--muted)}
+.table-note[hidden],.past-notice[hidden]{display:none}
 .curri tbody td{white-space:normal}
 .td-week{font-weight:800;color:var(--green);white-space:nowrap}
 
@@ -396,9 +399,8 @@ tr.st-past .td-name a,tr.st-done .td-name a{color:var(--muted)}
 .footer-cta{margin-top:6px;font-size:14px;padding:11px 22px}
 .footer-fine{margin-top:34px;padding-top:18px;border-top:1px solid rgba(255,255,255,.1);color:#71837a;font-size:12.5px}
 .footer-date{display:block;margin-top:6px}
-body{-webkit-user-select:none;-moz-user-select:none;user-select:none}
-input,textarea,select{-webkit-user-select:text;-moz-user-select:text;user-select:text}
-img{-webkit-user-drag:none;user-drag:none}
+/* 복사 방지(전역 user-select:none·이미지 끌기 막기, 우클릭·F12·드래그·선택 막는 스크립트)는 2026-09-29 해제 —
+   과외 4곳(09-15)과 같은 처리. 손님이 일정·연락처를 복사하지 못하는 부작용 때문. 다시 넣지 말 것 */
 /* ============================================================
    모바일 여백 리듬 (2026-09-23)
    ⚠ 이 블록은 CSS 문자열 맨 끝에 둔다 — 앞에 있는 더 좁은 미디어쿼리

@@ -238,32 +238,74 @@ ${footer(dateLabel)}
   new IntersectionObserver(function(en){ fc.classList.toggle('hide', en[0].isIntersecting); }).observe(consult);
 })();
 (function(){
-  function isFormEl(t){ return t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT'); }
-  document.addEventListener('contextmenu', function(e){ if(!isFormEl(e.target)) e.preventDefault(); }, true);
-  document.addEventListener('keydown', function(e){
-    if(e.key === 'F12' || e.keyCode === 123 ||
-       ((e.ctrlKey || e.metaKey) && e.shiftKey && ['I','i','J','j','C','c'].indexOf(e.key) > -1) ||
-       ((e.ctrlKey || e.metaKey) && (e.key === 'u' || e.key === 'U'))){
-      e.preventDefault();
-    }
-  }, true);
-  document.addEventListener('dragstart', function(e){ e.preventDefault(); });
-  document.addEventListener('selectstart', function(e){ if(!isFormEl(e.target)) e.preventDefault(); });
-})();
-(function(){
-  // 개강 일정 상태를 접속 시점 기준으로 재계산 — 빌드 이후 개강한 기수도 자동으로 '개강 완료' 표기
-  var rows = document.querySelectorAll('tr[data-open]');
-  if(!rows.length) return;
+  // 개강 상태를 접속 시점 기준으로 재계산 — 빌드 이후 개강한 기수가 '접수 중·마감 임박·모집 중'으로 남지 않게
+  //   일정표 행(tr[data-open]) · 지역 모집 카드(.offer-card[data-open]) · 홈 과정 카드 집계([data-live-rows]) · 지역 CEO 안내(#ceo-info[data-open])
+  //   ⚠ 제목·설명문(검색 결과에 보이는 것)은 여기서 못 바꾼다 — 개강일이 지나면 다시 빌드할 것
   var now = new Date(), today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
-  var L = { open: '접수 중', soon: '마감 임박', past: '개강 완료', done: '종료' };
-  for(var i = 0; i < rows.length; i++){
-    var tr = rows[i], o = tr.getAttribute('data-open'), c = tr.getAttribute('data-close');
-    if(!o) continue;
+  function stKey(o, c){
     var ot = Date.parse(o), ct = c ? Date.parse(c) : NaN;
-    if(isNaN(ot)) continue;
-    var k = (!isNaN(ct) && ct < today) ? 'done' : ot <= today ? 'past' : (ot - today <= 7 * 86400000) ? 'soon' : 'open';
+    if(isNaN(ot)) return '';
+    return (!isNaN(ct) && ct < today) ? 'done' : ot <= today ? 'past' : (ot - today <= 7 * 86400000) ? 'soon' : 'open';
+  }
+  var L = { open: '접수 중', soon: '마감 임박', past: '개강 완료', done: '종료' };
+  var rows = document.querySelectorAll('tr[data-open]');
+  for(var i = 0; i < rows.length; i++){
+    var tr = rows[i], k = stKey(tr.getAttribute('data-open'), tr.getAttribute('data-close'));
+    if(!k) continue;
     tr.className = tr.className.replace(/(^|\\s)st-[a-z]+/g, '').trim() + ' st-' + k;
     var b = tr.querySelector('.st-badge'); if(b) b.textContent = L[k];
+    if(k === 'past' || k === 'done'){
+      var sec = tr.closest ? tr.closest('.wrap') : null, note = sec ? sec.querySelector('.sched-note') : null;
+      if(note) note.hidden = false;
+    }
+  }
+  var cards = document.querySelectorAll('.offer-card[data-open]'), changed = false;
+  for(var j = 0; j < cards.length; j++){
+    var card = cards[j], ck = stKey(card.getAttribute('data-open'), card.getAttribute('data-close'));
+    if(!ck) continue;
+    var head = card.querySelector('.offer-head'), sb = card.querySelector('.st-live');
+    if(ck === 'open'){ if(sb) sb.parentNode.removeChild(sb); continue; }
+    if(!sb && head){ sb = document.createElement('span'); head.appendChild(sb); }
+    if(!sb) continue;
+    sb.className = 'offer-badge st-live ' + (ck === 'soon' ? 'soon' : 'past');
+    sb.textContent = ck === 'soon' ? '마감 임박' : '개강 완료';
+    if(ck !== 'soon' && card.className.indexOf('is-past') < 0){ card.className += ' is-past'; changed = true; }
+  }
+  var sub = document.querySelector('[data-live-offers]');
+  if(sub && changed){
+    var all = document.querySelectorAll('.offer-card'), n = 0, kinds = {}, kc = 0, rn = sub.getAttribute('data-live-offers');
+    for(var m = 0; m < all.length; m++){
+      if(all[m].className.indexOf('is-past') > -1) continue;
+      n++;
+      var cc = all[m].getAttribute('data-course') || m;
+      if(!kinds[cc]){ kinds[cc] = 1; kc++; }
+    }
+    sub.textContent = !n ? rn + ' 지역에서 지금 접수 중인 기수는 없습니다. 아래 카드는 이미 개강한 기수이며, 다음 기수 개설 소식은 하단 상담 신청을 남겨 주시면 가장 먼저 안내드립니다.'
+      : kc > 1 ? rn + '에서는 ' + kc + '개 과정 ' + n + '개 기수가 접수 중입니다. 카드를 누르면 과정별 안내로 이동합니다.'
+      : rn + '에서 지금 접수 중인 기수는 ' + n + '개입니다. 접수는 교육 시작 일주일 전까지이며 조기 마감될 수 있습니다.';
+  }
+  var ci = document.querySelector('#ceo-info[data-open]');
+  if(ci){
+    var ik = stKey(ci.getAttribute('data-open'), ci.getAttribute('data-close'));
+    var pn = ci.querySelector('.past-notice');
+    if((ik === 'past' || ik === 'done') && pn && pn.hidden){
+      pn.hidden = false;
+      var rl = ci.querySelector('.live-recruit'); if(rl) rl.textContent = '안내';
+    }
+  }
+  var stats = document.querySelectorAll('[data-live-rows]');
+  for(var s = 0; s < stats.length; s++){
+    var el = stats[s], raw = el.getAttribute('data-live-rows'), list = raw ? raw.split(';') : [], act = [], names = [], seen = {}, nx = null;
+    for(var q = 0; q < list.length; q++){
+      var p = list[q].split('|');
+      if(p[1] && Date.parse(p[1]) <= today) continue;
+      act.push(p);
+      if(!seen[p[0]]){ seen[p[0]] = 1; names.push(p[0]); }
+      if(p[1] && (!nx || p[1] < nx[1])) nx = p;
+    }
+    el.textContent = !act.length ? '개강 일정은 문의 시 안내'
+      : (el.getAttribute('data-live-kind') === 'ceo' ? '전국 ' + names.length + '개 지역 · ' + act.length + '개 기수 모집 중' : names.join('·') + ' ' + act.length + '개 기수 모집 중')
+        + (nx ? ' · 가장 빠른 개강 ' + nx[2] : '');
   }
 })();
 </script>
@@ -319,7 +361,7 @@ function why5Html() {
 </section>`;
 }
 
-function scheduleTable(rows, { linkRegion = true } = {}) {
+function scheduleTable(rows, { linkRegion = true, label = "개강 일정표" } = {}) {
   // 접수 중인 기수 먼저 개강일순, 이미 개강한 기수는 아래로 (같은 날짜면 데이터 순서 유지)
   const tr = rows
     .slice().sort(bySchedule)
@@ -337,13 +379,14 @@ function scheduleTable(rows, { linkRegion = true } = {}) {
       </tr>`;
     })
     .join("\n");
+  // '개강 완료' 안내문은 늘 넣어 두고, 빌드 시점에 개강한 기수가 없으면 숨긴다 — 접속 시점에 개강한 행이 생기면 하단 스크립트가 연다
   const hasPast = rows.some((r) => !isActive(r));
   return `<p class="table-hint">← 표를 옆으로 밀어서 볼 수 있습니다</p>
-  <div class="table-wrap"><table class="sched">
+  <div class="table-wrap" tabindex="0" role="region" aria-label="${esc(label)}"><table class="sched">
     <thead><tr><th>과정</th><th>상태</th><th>기수</th><th>개강</th><th>요일</th><th>기간</th><th>수강료</th></tr></thead>
     <tbody>${tr}</tbody>
   </table></div>
-  ${hasPast ? `<p class="table-note">‘개강 완료’는 이미 시작한 기수입니다. 다음 기수 개설 일정은 상담 신청을 남겨 주시면 가장 먼저 안내드립니다.</p>` : ""}`;
+  <p class="table-note sched-note"${hasPast ? "" : " hidden"}>‘개강 완료’는 이미 시작한 기수입니다. 다음 기수 개설 일정은 상담 신청을 남겨 주시면 가장 먼저 안내드립니다.</p>`;
 }
 
 // 교육 현장 사진 갤러리 (얼굴 모자이크 처리본)
@@ -353,7 +396,8 @@ const GALLERY_IMGS = [
   ["class-007.jpg", "수강생 네트워킹과 조별 실습"],
   ["class-009.jpg", "수강생 발표 실습 장면"],
   ["class-005.jpg", "데일카네기 최고경영자과정 교육장"],
-  // class-004(수료증 사진)은 액자에 수강생 실명이 읽혀 뺐다 — 파일은 assets에 남아 있다
+  // class-004(수료증 사진)은 액자에 수강생 실명이 읽혀 뺐다(09-22). 2026-09-29 assets·docs/assets 파일도 지웠다 —
+  //   빌드가 assets를 통째로 복사하므로 사람 이름이 읽히는 사진은 assets에 두지 말 것(원본은 ../교육과정사진)
 ];
 
 function galleryHtml(count = 4, title = "교육 현장") {
@@ -405,7 +449,7 @@ function consultSection(preset = {}) {
         <label><span class="cap">문의 지역 <b>*</b></span><select name="지역" required><option value="">선택해 주세요</option>${regionOpts}<option value="기타/미정">기타/미정</option></select></label>
       </div>
       <div class="form-row">
-        <label><span class="cap">문의 내용</span><textarea name="문의내용" rows="5" placeholder="문의하시게 된 계기, 관심 있는 교육 주제, 등록·수강 관련 궁금한 점을 자유롭게 남겨 주세요"></textarea></label>
+        <label><span class="cap">문의 내용</span><textarea name="문의내용" rows="5" maxlength="1000" placeholder="문의하시게 된 계기, 관심 있는 교육 주제, 등록·수강 관련 궁금한 점을 자유롭게 남겨 주세요"></textarea></label>
       </div>
       <div class="form-agree">
         <input type="checkbox" id="agree" required checked onclick="if(!this.checked){alert('체크를 해제하시면 상담 신청이 어렵습니다.');this.checked=true;}">
@@ -440,6 +484,8 @@ function consultSection(preset = {}) {
       var name = (f.get('이름')||'').trim(), tel = (function(p,v){v=String(v||'').replace(/\\D/g,'');return v.length===11?v.slice(0,3)+'-'+v.slice(3,7)+'-'+v.slice(7):v.length===10?v.slice(0,3)+'-'+v.slice(3,6)+'-'+v.slice(6):v.length===8?p+'-'+v.slice(0,4)+'-'+v.slice(4):v.length===7?p+'-'+v.slice(0,3)+'-'+v.slice(3):p+'-'+v;})((f.get('연락처앞')||'010'),(f.get('연락처')||'').trim());
       var org = (f.get('소속')||'').trim(), rank = (f.get('직급')||'').trim(), course = f.get('관심과정')||'', region = f.get('지역')||'';
       if(!name || !tel || !org || !course || !region){ alert('필수 항목을 모두 입력해 주세요.'); return; }
+      /* 뒷자리가 7자리보다 짧으면 연락할 수 없는 번호가 시트에 들어간다 */
+      if(String(f.get('연락처')||'').replace(/\\D/g,'').length < 7){ alert('연락처를 확인해 주세요.'); return; }
       var btn = form.querySelector('.form-submit');
       btn.disabled = true; btn.textContent = '접수 중...';
       var data = {
@@ -497,6 +543,8 @@ function buildIndex() {
           ? `전국 ${regionNames.length}개 지역 · ${rows.length}개 기수 모집 중`
           : `${regionNames.join("·")} ${rows.length}개 기수 모집 중`;
       const label = k === "ceo" ? "경영자 · 임원을 위한 대표 과정" : "모든 성인을 위한 원조 프로그램";
+      // 집계 문구는 접속 시점에 다시 계산한다 — 기수마다 "지역|개강일(ISO, 미정이면 빈칸)|표기" (하단 스크립트)
+      const liveRows = rows.map((x) => `${REGIONS[x.region].name}|${isoDay(schedDate(x.open))}|${x.open}`).join(";");
       return `<a class="course-card featured" href="${c.slug}.html">
         <span class="course-code">${c.code}</span>
         <p class="course-label">${label}</p>
@@ -504,7 +552,7 @@ function buildIndex() {
         <p class="course-tag">${c.tag}</p>
         <p class="course-short">${c.short}</p>
         <span class="course-meta">${c.duration}</span>
-        <span class="course-stat">${stat}${next ? ` · 가장 빠른 개강 ${next.open}` : ""}</span>
+        <span class="course-stat" data-live-kind="${k}" data-live-rows="${esc(liveRows)}">${stat}${next ? ` · 가장 빠른 개강 ${next.open}` : ""}</span>
         <span class="course-more">자세히 보기 →</span>
       </a>`;
     })
@@ -571,7 +619,7 @@ ${why5Html()}
   <div class="wrap">
     <h2 class="sec-title">${YEAR_LABEL} 개강 일정</h2>
     <p class="sec-sub">과정명을 누르면 해당 지역 안내 페이지로 이동합니다. 접수는 교육 시작 일주일 전까지이며 조기 마감될 수 있습니다.</p>
-    ${scheduleTable(SCHEDULE)}
+    ${scheduleTable(SCHEDULE, { label: `${YEAR_LABEL} 전국 개강 일정표` })}
   </div>
 </section>
 
@@ -739,7 +787,7 @@ function alumniTableHtml() {
   <div class="wrap">
     <h2 class="sec-title">수료 후에도 이어지는 지역별 동문 활동</h2>
     <p class="sec-sub">12주가 끝나도 만남은 계속됩니다. 지역마다 수료 동문들이 총동문회를 중심으로 골프·산행·독서 같은 정기 모임을 스스로 꾸려 가고 있습니다. 아래는 지사별로 모은 현재 운영 중인 동문 모임입니다.</p>
-    <div class="table-wrap"><table class="curri alumni-table">
+    <div class="table-wrap" tabindex="0" role="region" aria-label="지사별 동문 활동 표"><table class="curri alumni-table">
       <thead><tr><th>지사</th><th>지역</th><th>동문 활동</th></tr></thead>
       <tbody>${rows}</tbody>
     </table></div>
@@ -1110,7 +1158,7 @@ ${key === "ceo" ? ceoIntroExtra() : ""}
 <section class="section">
   <div class="wrap">
     <h2 class="sec-title">커리큘럼</h2>
-    <div class="table-wrap"><table class="curri">
+    <div class="table-wrap" tabindex="0" role="region" aria-label="${esc(c.name)} 커리큘럼 표"><table class="curri">
       <thead><tr><th>구분</th><th>교육 내용</th></tr></thead>
       <tbody>${d.curriculum.map(([w, t]) => `<tr><td class="td-week">${w}</td><td>${t}</td></tr>`).join("")}</tbody>
     </table></div>
@@ -1128,7 +1176,7 @@ ${key === "ceo" ? alumniTableHtml() : ""}
 ${rows.length ? `<section class="section">
   <div class="wrap">
     <h2 class="sec-title">${YEAR_LABEL} 개강 일정</h2>
-    ${scheduleTable(rows)}
+    ${scheduleTable(rows, { label: `${c.name} 개강 일정표` })}
     ${key === "ceo" ? `<p class="sec-sub" style="margin-top:16px">이 외 지역별 상세 안내는 <a href="index.html#regions">지역별 안내</a>에서 확인하세요.</p>` : ""}
   </div>
 </section>` : `<section class="section"><div class="wrap"><h2 class="sec-title">개강 일정</h2><p class="sec-sub">현재 모집 중인 기수 일정은 문의 시 안내드립니다.</p></div></section>`}
@@ -1209,8 +1257,11 @@ function regionOffersHtml(slug, allRows) {
     const title = x.variant ? `${c.name} · ${x.variant}` : c.name;
     const badge = x.course === "ceo" ? "경영자 과정" : x.course === "dcc" ? "모든 성인 대상" : "";
     const st = schedStatus(x);
-    return `<a class="offer-card${x.course === "ceo" ? " primary" : ""}" href="${href}">
-      <div class="offer-head"><span class="course-code">${c.code}</span>${badge ? `<span class="offer-badge">${badge}</span>` : ""}${st.key === "soon" ? `<span class="offer-badge soon">${st.label}</span>` : st.key === "tba" ? `<span class="offer-badge tba">개강 ${x.open}</span>` : ""}</div>
+    // data-open: 접속 시점에 개강일이 지났으면 하단 스크립트가 '마감 임박'을 '개강 완료'로 바꾼다
+    const openIso = isoDay(schedDate(x.open));
+    const liveAttr = openIso ? ` data-open="${openIso}" data-close="${isoDay(schedDate(x.close))}"` : "";
+    return `<a class="offer-card${x.course === "ceo" ? " primary" : ""}" href="${href}" data-course="${x.course}"${liveAttr}>
+      <div class="offer-head"><span class="course-code">${c.code}</span>${badge ? `<span class="offer-badge">${badge}</span>` : ""}${st.key === "soon" ? `<span class="offer-badge st-live soon">${st.label}</span>` : st.key === "tba" ? `<span class="offer-badge tba">개강 ${x.open}</span>` : ""}</div>
       <h3>${title} ${x.gi ? `<span class="gi">${x.gi}기</span>` : ""}</h3>
       <dl class="offer-meta">
         <div><dt>일정</dt><dd>${periodText(x)}</dd></div>
@@ -1224,7 +1275,7 @@ function regionOffersHtml(slug, allRows) {
   return `<section class="section" id="offers">
   <div class="wrap">
     <h2 class="sec-title">${r.name} ${YEAR_LABEL} 모집 중인 과정</h2>
-    <p class="sec-sub">${kinds > 1 ? `${r.name}에서는 ${kinds}개 과정 ${sorted.length}개 기수가 접수 중입니다. 카드를 누르면 과정별 안내로 이동합니다.` : `${r.name}에서 현재 접수 중인 기수입니다. 접수는 교육 시작 일주일 전까지이며 조기 마감될 수 있습니다.`}</p>
+    <p class="sec-sub" data-live-offers="${r.name}">${kinds > 1 ? `${r.name}에서는 ${kinds}개 과정 ${sorted.length}개 기수가 접수 중입니다. 카드를 누르면 과정별 안내로 이동합니다.` : `${r.name}에서 현재 접수 중인 기수입니다. 접수는 교육 시작 일주일 전까지이며 조기 마감될 수 있습니다.`}</p>
     <div class="offer-grid">${cards}</div>
   </div>
 </section>`;
@@ -1247,7 +1298,7 @@ function dccIntroHtml(slug) {
       <li>구성: 주 1회(3.5시간) × 8주 — 매주 도전 과제를 수행하며 변화를 체감하는 실습형 과정</li>
       <li>${r.name} 개설: 현재 공개과정 일정은 아래 지역에서 운영 중이며, 기업·단체 단위 ${r.name} 맞춤 개설(${b.label} 관할)은 하단 상담 신청이나 전화 상담으로 문의하실 수 있습니다</li>
     </ul>
-    ${dccRows.length ? `<h3 class="sec-title-sm" style="margin-top:26px">현재 접수 중인 데일카네기 코스 일정</h3>${scheduleTable(dccRows)}` : ""}
+    ${dccRows.length ? `<h3 class="sec-title-sm" style="margin-top:26px">현재 접수 중인 데일카네기 코스 일정</h3>${scheduleTable(dccRows, { label: "데일카네기 코스 개강 일정표" })}` : ""}
     <p class="sec-sub" style="margin-top:14px"><a href="${comboFile(slug, "dcc")}">${r.name} 데일카네기 코스 안내 →</a> · <a href="dcc.html">DCC 과정 상세(커리큘럼·기대 효과) →</a></p>
   </div>
 </section>`;
@@ -1282,11 +1333,13 @@ function buildRegion(slug) {
   </div>
 </section>`;
 
+  // 개강 완료 안내는 개강일이 있는 기수면 늘 넣어 두고, 아직 개강 전이면 숨긴다 — 접속 시점에 개강일이 지나면 하단 스크립트가 연다
+  const ceoOpenIso = mainCeo ? isoDay(schedDate(mainCeo.open)) : "";
   const infoRows = mainCeo
-    ? `<section class="section alt" id="ceo-info">
+    ? `<section class="section alt" id="ceo-info"${ceoOpenIso ? ` data-open="${ceoOpenIso}" data-close="${isoDay(schedDate(mainCeo.close))}"` : ""}>
   <div class="wrap narrow">
-    <h2 class="sec-title">${r.name} 최고경영자 코스 ${mainCeo.gi ? mainCeo.gi + "기" : ""} ${mainCeoPast ? "안내" : "모집 안내"}</h2>
-    ${mainCeoPast ? `<p class="past-notice"><strong>${mainCeo.gi ? mainCeo.gi + "기는 " : ""}${mainCeo.open} 개강 완료</strong> — 현재 진행 중인 기수로 신규 접수는 마감되었습니다. 다음 기수 개설 일정은 하단 상담 신청을 남겨 주시면 가장 먼저 안내드립니다.</p>` : ""}
+    <h2 class="sec-title">${r.name} 최고경영자 코스 ${mainCeo.gi ? mainCeo.gi + "기" : ""} <span class="live-recruit">${mainCeoPast ? "안내" : "모집 안내"}</span></h2>
+    ${mainCeoPast || ceoOpenIso ? `<p class="past-notice"${mainCeoPast ? "" : " hidden"}><strong>${mainCeo.gi ? mainCeo.gi + "기는 " : ""}${mainCeo.open} 개강 완료</strong> — 현재 진행 중인 기수로 신규 접수는 마감되었습니다. 다음 기수 개설 일정은 하단 상담 신청을 남겨 주시면 가장 먼저 안내드립니다.</p>` : ""}
     <dl class="info-list">
       <div><dt>지원 대상</dt><dd>국내외 공·사기업 CEO / 기업 및 기관의 임원, 정부 및 주요기관의 공무원·기관장·단체장, 전문직 및 사회 각 분야의 오피니언 리더</dd></div>
       <div><dt>교육 장소</dt><dd>${r.venue}</dd></div>
@@ -1308,7 +1361,7 @@ ${infoRows}
 ${rows.length > 1 ? `<section class="section">
   <div class="wrap">
     <h2 class="sec-title-sm">${r.name} ${YEAR_LABEL} 개설 과정 한눈에 보기</h2>
-    ${scheduleTable(rows.map((x) => ({ ...x })), { linkRegion: false })}
+    ${scheduleTable(rows.map((x) => ({ ...x })), { linkRegion: false, label: `${r.name} 개강 일정표` })}
   </div>
 </section>`
     : ""}
@@ -1376,7 +1429,7 @@ ${consultSection({ region: slug })}`;
   const titleGi = mainCeo && mainCeo.gi ? ` ${mainCeo.gi}기` : "";
   return page({
     file: `${slug}.html`,
-    title: `${r.name} 데일카네기 최고경영자 코스${titleGi} | ${YEAR_LABEL} 모집 안내`,
+    title: `${r.name} 데일카네기 최고경영자 코스${titleGi} | ${YEAR_LABEL} ${mainCeoPast ? "과정 안내" : "모집 안내"}`,
     desc: `${r.name} 데일카네기 최고경영자 코스${titleGi} ${mainCeoPast ? "안내" : "모집"}. ${mainCeo ? `2026년 ${mainCeo.open} 개강${mainCeoPast ? "(진행 중, 다음 기수 모집 예정)" : ""}, 매주 ${mainCeo.day}요일 ${mainCeo.weeks} 과정, 교육비 ${fee(mainCeo.fee)}.` : ""} ${r.venue} · 온라인 상담 신청 접수 중`,
     hero,
     body,
@@ -1562,7 +1615,7 @@ function buildCombo(regionSlug, courseKey) {
     ? `<section class="section alt">
   <div class="wrap">
     <h2 class="sec-title">${r.name} ${YEAR_LABEL} 개강 일정</h2>
-    ${scheduleTable(localRows, { linkRegion: false })}
+    ${scheduleTable(localRows, { linkRegion: false, label: `${r.name} ${c.name} 개강 일정표` })}
     <p class="sec-sub" style="margin-top:14px">교육 장소: ${r.venue}</p>
   </div>
 </section>`
@@ -1572,7 +1625,7 @@ function buildCombo(regionSlug, courseKey) {
     <p class="sec-sub">${r.name} 지역의 ${c.name} 개강 일정은 준비 중입니다. 아래 전국 일정을 참고하시거나,
     하단 상담 신청을 남겨 주시면 ${r.name} 인근 개설 소식과 참여 가능한 가까운 일정을 안내드립니다.
     기업·단체 대상 지역 맞춤 개설 문의도 가능합니다.</p>
-    ${allRows.length ? scheduleTable(allRows) : ""}
+    ${allRows.length ? scheduleTable(allRows, { label: `${c.name} 전국 개강 일정표` }) : ""}
   </div>
 </section>`;
 
@@ -1613,7 +1666,7 @@ ${scheduleBlock}
 <section class="section alt">
   <div class="wrap">
     <h2 class="sec-title">커리큘럼</h2>
-    <div class="table-wrap"><table class="curri">
+    <div class="table-wrap" tabindex="0" role="region" aria-label="${esc(c.name)} 커리큘럼 표"><table class="curri">
       <thead><tr><th>구분</th><th>교육 내용</th></tr></thead>
       <tbody>${d.curriculum.map(([w, t]) => `<tr><td class="td-week">${w}</td><td>${t}</td></tr>`).join("")}</tbody>
     </table></div>
@@ -1846,6 +1899,9 @@ tr.st-past .td-name a,tr.st-done .td-name a{color:var(--muted)}
 .past-notice strong{color:#222}
 .offer-badge.soon{background:#fff1e6;color:#b4500f}
 .offer-badge.tba{background:#f1f3f2;color:#555}
+.offer-badge.past{background:#ecebe8;color:#7a7a7a}
+.offer-card.is-past h3,.offer-card.is-past .offer-meta dd{color:var(--muted)}
+.table-note[hidden],.past-notice[hidden]{display:none}
 .curri tbody td{white-space:normal}
 .td-week{font-weight:800;color:var(--green);white-space:nowrap}
 
@@ -2052,9 +2108,8 @@ tr.st-past .td-name a,tr.st-done .td-name a{color:var(--muted)}
 .footer-cta{margin-top:6px;font-size:14px;padding:11px 22px}
 .footer-fine{margin-top:34px;padding-top:18px;border-top:1px solid rgba(255,255,255,.1);color:#71837a;font-size:12.5px}
 .footer-date{display:block;margin-top:6px}
-body{-webkit-user-select:none;-moz-user-select:none;user-select:none}
-input,textarea,select{-webkit-user-select:text;-moz-user-select:text;user-select:text}
-img{-webkit-user-drag:none;user-drag:none}
+/* 복사 방지(전역 user-select:none·이미지 끌기 막기, 우클릭·F12·드래그·선택 막는 스크립트)는 2026-09-29 해제 —
+   과외 4곳(09-15)과 같은 처리. 손님이 일정·연락처를 복사하지 못하는 부작용 때문. 다시 넣지 말 것 */
 /* ============================================================
    모바일 여백 리듬 (2026-09-23)
    ⚠ 이 블록은 CSS 문자열 맨 끝에 둔다 — 앞에 있는 더 좁은 미디어쿼리
@@ -2333,7 +2388,7 @@ fs.writeFileSync(path.join(OUT, `${INDEXNOW_KEY}.txt`), INDEXNOW_KEY);
 
 // rss.xml — 네이버 서치어드바이저 제출용 (항목 추가 시 pubDate는 고정 날짜로 기입)
 const RSS_ITEMS = [
-  { title: `${YEAR_LABEL} 데일카네기 전국 공개과정 개강 일정 안내`, link: `${BASE_URL}/index.html`, date: "Mon, 20 Jul 2026 09:00:00 +0900", desc: "최고경영자 코스·데일카네기 코스(DCC)·리더십·세일즈·프레젠테이션 과정의 전국 개강 일정과 지역별 모집 안내." },
+  { title: `${YEAR_LABEL} 데일카네기 전국 공개과정 개강 일정 안내`, link: `${BASE_URL}/`, date: "Mon, 20 Jul 2026 09:00:00 +0900", desc: "최고경영자 코스·데일카네기 코스(DCC)·리더십·세일즈·프레젠테이션 과정의 전국 개강 일정과 지역별 모집 안내." },
   ...REVIEWS.map((rv, i) => ({
     title: `[수강 후기] ${rv.title}`,
     link: `${BASE_URL}/reviews.html`,
