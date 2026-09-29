@@ -20,7 +20,7 @@
 <meta name="naver-site-verification" content="dbd104a111caeca5379e2fd4b5e27f55a5eec692">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230c3b2e'/%3E%3Ctext x='32' y='45' font-size='34' font-weight='bold' text-anchor='middle' fill='%23c6a15b' font-family='Arial'%3EC%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<link rel="stylesheet" href="style.css?v=mudo4ir1">
+<link rel="stylesheet" href="style.css?v=mum7yt12">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"Course","name":"데일카네기 세일즈 코스","description":"고객의 선택을 바꾸는 대화력·설득력·관계 구축력을 구조화해 매출과 장기 성과로 연결하는 세일즈 과정","provider":{"@type":"Organization","name":"데일카네기코리아","telephone":"02-556-0113"},"datePublished":"2026-07-22","dateModified":"2026-09-11"}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"홈","item":"https://leadershipcourse.co.kr/"},{"@type":"ListItem","position":2,"name":"과정 안내","item":"https://leadershipcourse.co.kr/#courses"},{"@type":"ListItem","position":3,"name":"데일카네기 세일즈 코스","item":"https://leadershipcourse.co.kr/dcs.html"}]}</script>
 </head>
@@ -92,7 +92,7 @@
 <section class="section">
   <div class="wrap">
     <h2 class="sec-title">커리큘럼</h2>
-    <div class="table-wrap"><table class="curri">
+    <div class="table-wrap" tabindex="0" role="region" aria-label="데일카네기 세일즈 코스 커리큘럼 표"><table class="curri">
       <thead><tr><th>구분</th><th>교육 내용</th></tr></thead>
       <tbody><tr><td class="td-week">1일차</td><td>Unlocking Customer Impact — 고객 선택 구조, 가치 중심 세일즈, 성과 데이터 분석, 매출 전략 설계</td></tr><tr><td class="td-week">2일차</td><td>Leading High-Impact Teams — 팀 세일즈 성과 리더십, 코칭 시스템, 성과 관리 체계, 세일즈 스킬 마스터</td></tr></tbody>
     </table></div>
@@ -175,7 +175,7 @@
         <label><span class="cap">문의 지역 <b>*</b></span><select name="지역" required><option value="">선택해 주세요</option><option value="서울">서울</option><option value="부산">부산</option><option value="대구">대구</option><option value="대전">대전</option><option value="광주">광주</option><option value="울산">울산</option><option value="전북(전주)">전북(전주)</option><option value="천안·아산">천안·아산</option><option value="세종">세종</option><option value="청주">청주</option><option value="용인">용인</option><option value="수원">수원</option><option value="고양">고양</option><option value="파주">파주</option><option value="시흥">시흥</option><option value="광명">광명</option><option value="화성·오산">화성·오산</option><option value="의정부·양주·포천">의정부·양주·포천</option><option value="광주·하남">광주·하남</option><option value="이천·여주·양평">이천·여주·양평</option><option value="포항">포항</option><option value="진주">진주</option><option value="목포">목포</option><option value="여수">여수</option><option value="기타/미정">기타/미정</option></select></label>
       </div>
       <div class="form-row">
-        <label><span class="cap">문의 내용</span><textarea name="문의내용" rows="5" placeholder="문의하시게 된 계기, 관심 있는 교육 주제, 등록·수강 관련 궁금한 점을 자유롭게 남겨 주세요"></textarea></label>
+        <label><span class="cap">문의 내용</span><textarea name="문의내용" rows="5" maxlength="1000" placeholder="문의하시게 된 계기, 관심 있는 교육 주제, 등록·수강 관련 궁금한 점을 자유롭게 남겨 주세요"></textarea></label>
       </div>
       <div class="form-agree">
         <input type="checkbox" id="agree" required checked onclick="if(!this.checked){alert('체크를 해제하시면 상담 신청이 어렵습니다.');this.checked=true;}">
@@ -210,6 +210,8 @@
       var name = (f.get('이름')||'').trim(), tel = (function(p,v){v=String(v||'').replace(/\D/g,'');return v.length===11?v.slice(0,3)+'-'+v.slice(3,7)+'-'+v.slice(7):v.length===10?v.slice(0,3)+'-'+v.slice(3,6)+'-'+v.slice(6):v.length===8?p+'-'+v.slice(0,4)+'-'+v.slice(4):v.length===7?p+'-'+v.slice(0,3)+'-'+v.slice(3):p+'-'+v;})((f.get('연락처앞')||'010'),(f.get('연락처')||'').trim());
       var org = (f.get('소속')||'').trim(), rank = (f.get('직급')||'').trim(), course = f.get('관심과정')||'', region = f.get('지역')||'';
       if(!name || !tel || !org || !course || !region){ alert('필수 항목을 모두 입력해 주세요.'); return; }
+      /* 뒷자리가 7자리보다 짧으면 연락할 수 없는 번호가 시트에 들어간다 */
+      if(String(f.get('연락처')||'').replace(/\D/g,'').length < 7){ alert('연락처를 확인해 주세요.'); return; }
       var btn = form.querySelector('.form-submit');
       btn.disabled = true; btn.textContent = '접수 중...';
       var data = {
@@ -303,32 +305,74 @@
   new IntersectionObserver(function(en){ fc.classList.toggle('hide', en[0].isIntersecting); }).observe(consult);
 })();
 (function(){
-  function isFormEl(t){ return t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT'); }
-  document.addEventListener('contextmenu', function(e){ if(!isFormEl(e.target)) e.preventDefault(); }, true);
-  document.addEventListener('keydown', function(e){
-    if(e.key === 'F12' || e.keyCode === 123 ||
-       ((e.ctrlKey || e.metaKey) && e.shiftKey && ['I','i','J','j','C','c'].indexOf(e.key) > -1) ||
-       ((e.ctrlKey || e.metaKey) && (e.key === 'u' || e.key === 'U'))){
-      e.preventDefault();
-    }
-  }, true);
-  document.addEventListener('dragstart', function(e){ e.preventDefault(); });
-  document.addEventListener('selectstart', function(e){ if(!isFormEl(e.target)) e.preventDefault(); });
-})();
-(function(){
-  // 개강 일정 상태를 접속 시점 기준으로 재계산 — 빌드 이후 개강한 기수도 자동으로 '개강 완료' 표기
-  var rows = document.querySelectorAll('tr[data-open]');
-  if(!rows.length) return;
+  // 개강 상태를 접속 시점 기준으로 재계산 — 빌드 이후 개강한 기수가 '접수 중·마감 임박·모집 중'으로 남지 않게
+  //   일정표 행(tr[data-open]) · 지역 모집 카드(.offer-card[data-open]) · 홈 과정 카드 집계([data-live-rows]) · 지역 CEO 안내(#ceo-info[data-open])
+  //   ⚠ 제목·설명문(검색 결과에 보이는 것)은 여기서 못 바꾼다 — 개강일이 지나면 다시 빌드할 것
   var now = new Date(), today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
-  var L = { open: '접수 중', soon: '마감 임박', past: '개강 완료', done: '종료' };
-  for(var i = 0; i < rows.length; i++){
-    var tr = rows[i], o = tr.getAttribute('data-open'), c = tr.getAttribute('data-close');
-    if(!o) continue;
+  function stKey(o, c){
     var ot = Date.parse(o), ct = c ? Date.parse(c) : NaN;
-    if(isNaN(ot)) continue;
-    var k = (!isNaN(ct) && ct < today) ? 'done' : ot <= today ? 'past' : (ot - today <= 7 * 86400000) ? 'soon' : 'open';
+    if(isNaN(ot)) return '';
+    return (!isNaN(ct) && ct < today) ? 'done' : ot <= today ? 'past' : (ot - today <= 7 * 86400000) ? 'soon' : 'open';
+  }
+  var L = { open: '접수 중', soon: '마감 임박', past: '개강 완료', done: '종료' };
+  var rows = document.querySelectorAll('tr[data-open]');
+  for(var i = 0; i < rows.length; i++){
+    var tr = rows[i], k = stKey(tr.getAttribute('data-open'), tr.getAttribute('data-close'));
+    if(!k) continue;
     tr.className = tr.className.replace(/(^|\s)st-[a-z]+/g, '').trim() + ' st-' + k;
     var b = tr.querySelector('.st-badge'); if(b) b.textContent = L[k];
+    if(k === 'past' || k === 'done'){
+      var sec = tr.closest ? tr.closest('.wrap') : null, note = sec ? sec.querySelector('.sched-note') : null;
+      if(note) note.hidden = false;
+    }
+  }
+  var cards = document.querySelectorAll('.offer-card[data-open]'), changed = false;
+  for(var j = 0; j < cards.length; j++){
+    var card = cards[j], ck = stKey(card.getAttribute('data-open'), card.getAttribute('data-close'));
+    if(!ck) continue;
+    var head = card.querySelector('.offer-head'), sb = card.querySelector('.st-live');
+    if(ck === 'open'){ if(sb) sb.parentNode.removeChild(sb); continue; }
+    if(!sb && head){ sb = document.createElement('span'); head.appendChild(sb); }
+    if(!sb) continue;
+    sb.className = 'offer-badge st-live ' + (ck === 'soon' ? 'soon' : 'past');
+    sb.textContent = ck === 'soon' ? '마감 임박' : '개강 완료';
+    if(ck !== 'soon' && card.className.indexOf('is-past') < 0){ card.className += ' is-past'; changed = true; }
+  }
+  var sub = document.querySelector('[data-live-offers]');
+  if(sub && changed){
+    var all = document.querySelectorAll('.offer-card'), n = 0, kinds = {}, kc = 0, rn = sub.getAttribute('data-live-offers');
+    for(var m = 0; m < all.length; m++){
+      if(all[m].className.indexOf('is-past') > -1) continue;
+      n++;
+      var cc = all[m].getAttribute('data-course') || m;
+      if(!kinds[cc]){ kinds[cc] = 1; kc++; }
+    }
+    sub.textContent = !n ? rn + ' 지역에서 지금 접수 중인 기수는 없습니다. 아래 카드는 이미 개강한 기수이며, 다음 기수 개설 소식은 하단 상담 신청을 남겨 주시면 가장 먼저 안내드립니다.'
+      : kc > 1 ? rn + '에서는 ' + kc + '개 과정 ' + n + '개 기수가 접수 중입니다. 카드를 누르면 과정별 안내로 이동합니다.'
+      : rn + '에서 지금 접수 중인 기수는 ' + n + '개입니다. 접수는 교육 시작 일주일 전까지이며 조기 마감될 수 있습니다.';
+  }
+  var ci = document.querySelector('#ceo-info[data-open]');
+  if(ci){
+    var ik = stKey(ci.getAttribute('data-open'), ci.getAttribute('data-close'));
+    var pn = ci.querySelector('.past-notice');
+    if((ik === 'past' || ik === 'done') && pn && pn.hidden){
+      pn.hidden = false;
+      var rl = ci.querySelector('.live-recruit'); if(rl) rl.textContent = '안내';
+    }
+  }
+  var stats = document.querySelectorAll('[data-live-rows]');
+  for(var s = 0; s < stats.length; s++){
+    var el = stats[s], raw = el.getAttribute('data-live-rows'), list = raw ? raw.split(';') : [], act = [], names = [], seen = {}, nx = null;
+    for(var q = 0; q < list.length; q++){
+      var p = list[q].split('|');
+      if(p[1] && Date.parse(p[1]) <= today) continue;
+      act.push(p);
+      if(!seen[p[0]]){ seen[p[0]] = 1; names.push(p[0]); }
+      if(p[1] && (!nx || p[1] < nx[1])) nx = p;
+    }
+    el.textContent = !act.length ? '개강 일정은 문의 시 안내'
+      : (el.getAttribute('data-live-kind') === 'ceo' ? '전국 ' + names.length + '개 지역 · ' + act.length + '개 기수 모집 중' : names.join('·') + ' ' + act.length + '개 기수 모집 중')
+        + (nx ? ' · 가장 빠른 개강 ' + nx[2] : '');
   }
 })();
 </script>
