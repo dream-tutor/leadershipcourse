@@ -487,7 +487,7 @@ function consultSection(preset = {}) {
       /* 뒷자리가 7자리보다 짧으면 연락할 수 없는 번호가 시트에 들어간다 */
       if(String(f.get('연락처')||'').replace(/\\D/g,'').length < 7){ alert('연락처를 확인해 주세요.'); return; }
       var btn = form.querySelector('.form-submit');
-      btn.disabled = true; btn.textContent = '접수 중...';
+      var origTxt = btn.textContent; btn.disabled = true; btn.textContent = '접수 중...';
       var data = {
         '이름': name, '연락처': tel, '소속': org, '직급': rank,
         /* 구버전 GAS 호환용 — 아직 새 GAS를 배포하기 전이어도 소속이 시트에서 비지 않게 합친 값도 같이 보낸다 */
@@ -499,12 +499,16 @@ function consultSection(preset = {}) {
         '유입경로': document.referrer || '직접입력'
       };
       var qs = Object.keys(data).map(function(k){ return encodeURIComponent(k)+'='+encodeURIComponent(data[k]); }).join('&');
-      if(EP){ var img = new Image(); img.src = EP + '?' + qs; }
-      else { console.warn('FORM_ENDPOINT 미설정 — 데모 모드(시트 기록 없음)'); }
-      setTimeout(function(){
-        form.querySelectorAll('.form-row, .form-agree, .agree-detail, .form-submit, .form-fine').forEach(function(el){ el.style.display = 'none'; });
-        document.getElementById('consultDone').hidden = false;
-      }, 700);
+      var settled = false;
+      function showDone(){ form.querySelectorAll('.form-row, .form-agree, .agree-detail, .form-submit, .form-fine').forEach(function(el){ el.style.display = 'none'; }); document.getElementById('consultDone').hidden = false; }
+      function showFail(){ btn.disabled = false; btn.textContent = origTxt; alert("접수가 전달되지 않았습니다. 인터넷 연결을 확인하고 다시 보내 주세요. 급하시면 화면의 전화 상담 버튼으로 연락 주셔도 됩니다."); }
+      function finish(ok){ if(settled) return; settled = true; if(ok) showDone(); else showFail(); }
+      if(!EP){ console.warn("FORM_ENDPOINT 미설정 — 데모 모드(시트 기록 없음)"); setTimeout(function(){ finish(true); }, 500); return; }
+      /* GAS 는 CORS 헤더가 없어 응답은 못 읽지만, no-cors fetch 는 서버에 닿으면 resolve·못 닿으면 reject 라 "전달됐는지"는 구분된다.
+         이미지 요청은 둘을 구분하지 못해 전송 실패도 접수 완료로 보였다 (카네기2와 같은 방식, 2026-09-30). t.js 는 fetch 도 후킹하므로 문의 집계는 그대로. */
+      var timer = setTimeout(function(){ finish(false); }, 10000);
+      if(window.fetch){ fetch(EP + "?" + qs, { mode: "no-cors", cache: "no-store" }).then(function(){ clearTimeout(timer); finish(true); }, function(){ clearTimeout(timer); finish(false); }); }
+      else { var img = new Image(); img.onload = img.onerror = function(){ clearTimeout(timer); finish(true); }; img.src = EP + "?" + qs; }
     });
   })();
   (function(){
