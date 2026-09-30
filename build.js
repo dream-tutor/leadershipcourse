@@ -25,26 +25,16 @@ const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replac
 //   접수 중(open) → 개강 7일 이내(soon, 접수는 시작 일주일 전까지) → 개강 완료(past) → 수료일 경과(done)
 // ------------------------------------------------------------
 const TODAY_KST = (() => { const d = new Date(Date.now() + 9 * 3600 * 1000); return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()); })();
-function schedDate(mmdd, ref = TODAY_KST) {
-  const m = /^(\d{1,2})\.(\d{1,2})$/.exec(String(mmdd || "").trim());
-  if (!m) return null;
-  const rd = new Date(ref);
-  const mo = +m[1] - 1;
-  let y = rd.getUTCFullYear();
-  if (mo - rd.getUTCMonth() < -6) y += 1;      // 10월에 보는 01.11 → 이듬해
-  else if (mo - rd.getUTCMonth() > 6) y -= 1;  // 1월에 보는 09.08 → 전년
-  return Date.UTC(y, mo, +m[2]);
-}
-const isoDay = (t) => (t == null ? "" : new Date(t).toISOString().slice(0, 10));
-function schedStatus(r) {
-  const o = schedDate(r.open), c = schedDate(r.close);
-  if (o == null) return { key: "tba", label: "일정 문의" };
-  if (c != null && c < TODAY_KST) return { key: "done", label: "종료" };
-  if (o <= TODAY_KST) return { key: "past", label: "개강 완료" };
-  if (o - TODAY_KST <= 7 * 86400000) return { key: "soon", label: "마감 임박" };
-  return { key: "open", label: "접수 중" };
-}
-const isActive = (r) => { const k = schedStatus(r).key; return k === "open" || k === "soon" || k === "tba"; };
+// 날짜 해석은 카네기2와 공유하는 ../site2/lib-dates.js 한 곳에만 둔다 (2026-09-30 점검 A1).
+//   예전 "오늘과 달 번호 차" 방식은 7월에 빌드하면 10월 개강·1월 수료 기수의 수료일이 올해 1월로 읽혀 '종료'로 찍혔다.
+//   수료일은 개강일을 기준으로 읽는다(closeDate) — 12주 과정이 10월에 열리면 수료는 이듬해 1월. 검사는 `node ../site2/test-dates.js`.
+const D = require("../site2/lib-dates.js");
+const schedDate = (mmdd, ref = TODAY_KST) => D.schedDate(mmdd, ref);
+const closeDate = (r) => D.closeDate(r, TODAY_KST);
+const isoDay = D.isoDay;
+const ST_LABEL = { open: "접수 중", soon: "마감 임박", past: "개강 완료", done: "종료", tba: "일정 문의" };
+function schedStatus(r) { const key = D.schedStatus(r, TODAY_KST); return { key, label: ST_LABEL[key] }; }
+const isActive = (r) => D.isActive(r, TODAY_KST);
 const openKey = (r) => { const t = schedDate(r.open); return t == null ? "9999" : isoDay(t); };
 const byOpen = (a, b) => openKey(a).localeCompare(openKey(b));
 // 접수 중인 기수 먼저(개강일순) → 이미 개강한 기수는 뒤로
@@ -139,7 +129,10 @@ function crumbsJsonld(trail, pageUrl) {
 // ------------------------------------------------------------
 // 공통 레이아웃
 // ------------------------------------------------------------
-function page({ file, title, desc, body, hero = "", jsonld = null, crumbs = null }) {
+// 404는 /a/b/c 같은 하위 주소에서도 뜨므로 상대 경로(style.css·assets/·index.html)가 전부 깨진다 → 루트 기준(/)으로 바꾼다.
+//   <base href>를 쓰면 #consult 같은 페이지 안 앵커까지 홈으로 튀어 상담 팝업이 안 열린다 (2026-09-30 점검 A2)
+const rootLinks = (html) => html.replace(/(?<![\w-])(href|src)="(?!(?:https?:)?\/\/|\/|#|tel:|mailto:|data:|javascript:)([^"]*)"/g, '$1="/$2"');
+function page({ file, title, desc, body, hero = "", jsonld = null, crumbs = null, noindex = false }) {
   const url = `${BASE_URL}/${file === "index.html" ? "" : file}`;
   const isHome = file === "index.html";
 
@@ -156,23 +149,20 @@ function page({ file, title, desc, body, hero = "", jsonld = null, crumbs = null
   if (Array.isArray(jsonld)) ld.push({ ...jsonld[0], datePublished: published, dateModified: modified }, ...jsonld.slice(1));
   else if (jsonld) ld.push(datable ? { ...jsonld, datePublished: published, dateModified: modified } : jsonld);
   if (!datable) ld.push({ "@context": "https://schema.org", "@type": "WebPage", name: title, description: desc, url, datePublished: published, dateModified: modified, inLanguage: "ko-KR" });
-  const trail = isHome ? null : crumbs || crumbsFor(file, title);
+  const trail = isHome || noindex ? null : crumbs || crumbsFor(file, title);
   if (trail && trail.length > 1) ld.push(crumbsJsonld(trail, url));
-  const ldScripts = ld.map((o) => `<script type="application/ld+json">${JSON.stringify(o)}</script>`).join("\n");
+  const ldScripts = noindex ? "" : ld.map((o) => `<script type="application/ld+json">${JSON.stringify(o)}</script>`).join("\n");
 
   const crumbsBlock = trail && trail.length > 1 ? crumbsHtml(trail) : "";
 
-  return {
-    file,
-    lastmod: modified,
-    html: `<!DOCTYPE html>
+  const html = `<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(desc)}">
-<link rel="canonical" href="${url}">
+${noindex ? `<meta name="robots" content="noindex,follow">` : `<link rel="canonical" href="${url}">`}
 <meta property="og:type" content="website">
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(desc)}">
@@ -310,8 +300,8 @@ ${footer(dateLabel)}
 })();
 </script>
 </body>
-</html>`,
-  };
+</html>`;
+  return { file, lastmod: modified, html: file === "404.html" ? rootLinks(html) : html };
 }
 
 // 정보 업데이트 표기는 푸터 맨 아래 줄 (2026-09-17 사용자 지시 — 과외 사이트와 같이 브레드크럼·홈 본문 끝에서 내림)
@@ -368,7 +358,7 @@ function scheduleTable(rows, { linkRegion = true, label = "개강 일정표" } =
     .map((r) => {
       const st = schedStatus(r);
       const name = linkRegion ? `<a href="${r.region}.html">${r.name}</a>` : r.name;
-      return `<tr class="st-${st.key}" data-open="${isoDay(schedDate(r.open))}" data-close="${isoDay(schedDate(r.close))}">
+      return `<tr class="st-${st.key}" data-open="${isoDay(schedDate(r.open))}" data-close="${isoDay(closeDate(r))}">
         <td class="td-name">${name}</td>
         <td class="td-status"><span class="st-badge">${st.label}</span></td>
         <td>${r.gi ? r.gi + "기" : "-"}</td>
@@ -1263,7 +1253,7 @@ function regionOffersHtml(slug, allRows) {
     const st = schedStatus(x);
     // data-open: 접속 시점에 개강일이 지났으면 하단 스크립트가 '마감 임박'을 '개강 완료'로 바꾼다
     const openIso = isoDay(schedDate(x.open));
-    const liveAttr = openIso ? ` data-open="${openIso}" data-close="${isoDay(schedDate(x.close))}"` : "";
+    const liveAttr = openIso ? ` data-open="${openIso}" data-close="${isoDay(closeDate(x))}"` : "";
     return `<a class="offer-card${x.course === "ceo" ? " primary" : ""}" href="${href}" data-course="${x.course}"${liveAttr}>
       <div class="offer-head"><span class="course-code">${c.code}</span>${badge ? `<span class="offer-badge">${badge}</span>` : ""}${st.key === "soon" ? `<span class="offer-badge st-live soon">${st.label}</span>` : st.key === "tba" ? `<span class="offer-badge tba">개강 ${x.open}</span>` : ""}</div>
       <h3>${title} ${x.gi ? `<span class="gi">${x.gi}기</span>` : ""}</h3>
@@ -1340,7 +1330,7 @@ function buildRegion(slug) {
   // 개강 완료 안내는 개강일이 있는 기수면 늘 넣어 두고, 아직 개강 전이면 숨긴다 — 접속 시점에 개강일이 지나면 하단 스크립트가 연다
   const ceoOpenIso = mainCeo ? isoDay(schedDate(mainCeo.open)) : "";
   const infoRows = mainCeo
-    ? `<section class="section alt" id="ceo-info"${ceoOpenIso ? ` data-open="${ceoOpenIso}" data-close="${isoDay(schedDate(mainCeo.close))}"` : ""}>
+    ? `<section class="section alt" id="ceo-info"${ceoOpenIso ? ` data-open="${ceoOpenIso}" data-close="${isoDay(closeDate(mainCeo))}"` : ""}>
   <div class="wrap narrow">
     <h2 class="sec-title">${r.name} 최고경영자 코스 ${mainCeo.gi ? mainCeo.gi + "기" : ""} <span class="live-recruit">${mainCeoPast ? "안내" : "모집 안내"}</span></h2>
     ${mainCeoPast || ceoOpenIso ? `<p class="past-notice"${mainCeoPast ? "" : " hidden"}><strong>${mainCeo.gi ? mainCeo.gi + "기는 " : ""}${mainCeo.open} 개강 완료</strong> — 현재 진행 중인 기수로 신규 접수는 마감되었습니다. 다음 기수 개설 일정은 하단 상담 신청을 남겨 주시면 가장 먼저 안내드립니다.</p>` : ""}
@@ -2358,6 +2348,45 @@ ${consultSection({ course: t.courses && t.courses.length === 1 ? t.courses[0] : 
   return page({ file: `${t.slug}.html`, title: t.metaTitle, desc: t.desc, hero, body, jsonld });
 }
 
+// 없는 주소 — GitHub Pages 는 docs/404.html 이 있으면 기본 영문 404 대신 이 페이지를 낸다 (2026-09-30 점검 A2)
+//   noindex · 사이트맵 제외 · 공통 레이아웃(헤더·푸터·플로팅 바·t.js) · 홈·일정·상담 링크. 링크는 page()가 루트 기준으로 바꾼다.
+function build404() {
+  const hero = `<section class="hero hero-sm">
+  <div class="wrap hero-inner">
+    <p class="hero-kicker">404</p>
+    <h1>페이지를 찾을 수 없습니다</h1>
+    <p class="hero-sub">주소가 잘못 입력되었거나, 일정이 끝나 내려간 페이지입니다.</p>
+    <div class="hero-actions">
+      <a class="btn btn-gold" href="index.html">홈으로</a>
+      <a class="btn btn-line" href="index.html#schedule">개강 일정</a>
+      <a class="btn btn-line" href="#consult">상담 신청</a>
+    </div>
+  </div>
+</section>`;
+  const body = `
+<section class="section">
+  <div class="wrap">
+    <h2 class="sec-title-sm">주요 안내</h2>
+    <div class="chip-grid">
+      <a class="chip" href="index.html#courses">과정 안내</a>
+      <a class="chip" href="index.html#schedule">${YEAR_LABEL} 개강 일정</a>
+      <a class="chip" href="about.html">데일 카네기 소개</a>
+      <a class="chip" href="reviews.html">수강 후기</a>
+      <a class="chip" href="guide.html">리더십 칼럼</a>
+      <a class="chip" href="corporate.html">기업교육</a>
+    </div>
+  </div>
+</section>
+<section class="section alt">
+  <div class="wrap">
+    <h2 class="sec-title-sm">지역별 과정 안내</h2>
+    <div class="chip-grid">${Object.entries(REGIONS).map(([slug, r]) => `<a class="chip" href="${slug}.html">${r.name}</a>`).join("\n")}</div>
+  </div>
+</section>
+${consultSection()}`;
+  return page({ file: "404.html", title: "페이지를 찾을 수 없습니다 | 카네기코스", desc: "요청하신 주소의 페이지가 없습니다. 데일카네기 공개과정의 개강 일정과 과정 안내는 홈에서 볼 수 있습니다.", hero, body, noindex: true });
+}
+
 const pages = [];
 pages.push(buildIndex());
 pages.push(buildCorporate());
@@ -2369,6 +2398,7 @@ for (const g of GUIDES) pages.push(buildGuideArticle(g));
 for (const k of Object.keys(COURSES)) pages.push(buildCourse(k));
 for (const slug of Object.keys(REGIONS)) pages.push(buildRegion(slug));
 for (const slug of Object.keys(REGIONS)) for (const k of COMBO_COURSES) pages.push(buildCombo(slug, k));
+pages.push(build404());
 
 for (const p of pages) fs.writeFileSync(path.join(OUT, p.file), p.html);
 fs.writeFileSync(path.join(OUT, "style.css"), CSS);
@@ -2380,7 +2410,7 @@ fs.mkdirSync(assetsDst, { recursive: true });
 for (const f of fs.readdirSync(assetsSrc)) fs.copyFileSync(path.join(assetsSrc, f), path.join(assetsDst, f));
 
 // sitemap + robots
-const urls = pages.map((p) => `<url><loc>${BASE_URL}/${p.file === "index.html" ? "" : p.file}</loc><lastmod>${p.lastmod}</lastmod></url>`).join("\n");
+const urls = pages.filter((p) => p.file !== "404.html").map((p) => `<url><loc>${BASE_URL}/${p.file === "index.html" ? "" : p.file}</loc><lastmod>${p.lastmod}</lastmod></url>`).join("\n");
 fs.writeFileSync(path.join(OUT, "sitemap.xml"), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>`);
 fs.writeFileSync(path.join(OUT, "robots.txt"), `User-agent: *\nAllow: /\nSitemap: ${BASE_URL}/sitemap.xml`);
 fs.writeFileSync(path.join(OUT, "CNAME"), BASE_URL.replace(/^https?:\/\//, ""));
@@ -2431,5 +2461,5 @@ ${rssItems}
 </channel>
 </rss>`);
 
-console.log(`생성 완료: ${pages.length}개 페이지 + style.css + sitemap.xml + robots.txt → docs/`);
+console.log(`생성 완료: ${pages.length - 1}개 페이지 + 404.html + style.css + sitemap.xml + robots.txt → docs/`);
 if (!FORM_ENDPOINT) console.warn("⚠ FORM_ENDPOINT가 비어 있습니다 — 상담 양식이 데모 모드입니다. gas-form.gs 배포 후 data.js에 /exec 주소를 넣고 재생성하세요.");
