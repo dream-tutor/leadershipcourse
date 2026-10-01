@@ -348,7 +348,7 @@ function footer(dateLabel = "") {
         <div class="footer-regions">${regionLinks}</div>
       </div>
     </div>
-    <p class="footer-fine">데일카네기 공개과정 안내 페이지 · 과정 일정과 수강료는 사정에 따라 변경될 수 있습니다. 문의는 상담 신청 양식을 이용해 주세요.${dateLabel ? `<span class="footer-date">정보 업데이트 ${dateLabel}</span>` : ""}</p>
+    <p class="footer-fine">데일카네기 공개과정 안내 페이지 · 과정 일정과 수강료는 사정에 따라 변경될 수 있습니다. 문의는 상담 신청 양식을 이용해 주세요.<span class="footer-note">광고전화는 정중히 사절합니다.</span>${dateLabel ? `<span class="footer-date">정보 업데이트 ${dateLabel}</span>` : ""}</p>
   </div>
 </footer>`;
 }
@@ -2130,7 +2130,7 @@ tr.st-past .td-name a,tr.st-done .td-name a{color:var(--muted)}
 .footer-regions a:hover{border-color:var(--gold);color:var(--gold)}
 .footer-cta{margin-top:6px;font-size:14px;padding:11px 22px}
 .footer-fine{margin-top:34px;padding-top:18px;border-top:1px solid rgba(255,255,255,.1);color:#71837a;font-size:12.5px}
-.footer-date{display:block;margin-top:6px}
+.footer-date,.footer-note{display:block;margin-top:6px}
 /* 복사 방지(전역 user-select:none·이미지 끌기 막기, 우클릭·F12·드래그·선택 막는 스크립트)는 2026-09-29 해제 —
    과외 4곳(09-15)과 같은 처리. 손님이 일정·연락처를 복사하지 못하는 부작용 때문. 다시 넣지 말 것 */
 /* ============================================================
