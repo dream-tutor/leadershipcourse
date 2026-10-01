@@ -658,7 +658,7 @@ ${galleryHtml(4)}
       <blockquote>"열정과 인간관계에 관한 현장 교육은 저희 기업을 활기찬 조직으로 바꾸는 데 큰 힘이 되었습니다."<cite>— 박성수 (이랜드그룹 회장)</cite></blockquote>
       <blockquote>"비전을 공유시키는 커뮤니케이션, 인간경영은 사업의 핵심이다. 나는 카네기 코스를 통하여 이러한 기술들을 얻을 수 있었다."<cite>— 손병두 (호암재단 이사장)</cite></blockquote>
     </div>
-    <h2 class="sec-title" style="margin-top:52px">수강생이 직접 쓴 수료 후기</h2>
+    <h2 class="sec-title" style="margin-top:52px">수강생 수료 후기</h2>
     <div class="quote-grid">
       ${REVIEWS.slice(0, 4).map((rv) => `<blockquote>"${rv.excerpt}"<cite>— ${rv.author} · <a href="reviews.html">후기 보기</a></cite></blockquote>`).join("\n")}
     </div>
@@ -1191,7 +1191,7 @@ ${COMBO_COURSES.includes(key) ? `<section class="section alt">
 ${key === "ceo" || key === "dcc" ? `${galleryHtml(4)}
 <section class="section alt">
   <div class="wrap">
-    <h2 class="sec-title-sm">수강생이 직접 쓴 수료 후기</h2>
+    <h2 class="sec-title-sm">수강생 수료 후기</h2>
     <div class="quote-grid">
       ${REVIEWS.slice(0, 2).map((rv) => `<blockquote>"${rv.excerpt}"<cite>— ${rv.author}</cite></blockquote>`).join("\n")}
     </div>
@@ -1446,7 +1446,7 @@ function buildReviews() {
   const hero = `<section class="hero hero-sm">
   <div class="wrap hero-inner">
     <p class="hero-kicker">Graduates' Stories</p>
-    <h1>수강생들이 직접 쓴 <br>데일카네기 수료 후기</h1>
+    <h1>수강생들이 남긴 <br>데일카네기 수료 후기</h1>
     <p class="hero-sub">12주가 끝난 뒤, 수강생들의 삶은 어떻게 달라졌을까요. 수료생들이 남긴 글을 간추려 옮겼습니다.</p>
   </div>
 </section>`;
@@ -1474,7 +1474,7 @@ ${consultSection()}`;
   return page({
     file: "reviews.html",
     title: "데일카네기 수강 후기 | 최고경영자 코스 · 데일카네기 코스 수료생 이야기",
-    desc: "데일카네기 최고경영자 코스와 데일카네기 코스를 수료한 수강생들이 직접 남긴 후기 모음. 12주 과정에서 얻은 자신감·열정·인간관계의 변화를 확인하세요.",
+    desc: "데일카네기 최고경영자 코스와 데일카네기 코스를 수료한 수강생들의 후기를 간추린 모음. 12주 과정에서 얻은 자신감·열정·인간관계의 변화를 확인하세요.",
     hero,
     body,
   });
