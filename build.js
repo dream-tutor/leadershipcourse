@@ -249,6 +249,28 @@ ${footer(dateLabel)}
       if(note) note.hidden = false;
     }
   }
+  // 이미 개강한 기수는 접어 두고 버튼으로 펴고 접는다 (2026-10-01 사장님 요청).
+  //   모집 중인 기수가 하나도 없는 표는 접지 않는다(빈 표가 된다). JS 가 죽으면 전부 펼쳐진 채로 보인다.
+  var tables = document.querySelectorAll('table.sched');
+  for(var t = 0; t < tables.length; t++){ (function(tb){
+    var trs = tb.querySelectorAll('tbody tr'), old = [], act = 0;
+    for(var x = 0; x < trs.length; x++){
+      var cn = trs[x].className;
+      if(cn.indexOf('st-past') > -1 || cn.indexOf('st-done') > -1) old.push(trs[x]); else act++;
+    }
+    var wrap = tb.parentNode;
+    if(!old.length || !act || !wrap || !wrap.parentNode) return;
+    var opened = false, btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'sched-past-btn';
+    function set(){
+      for(var y = 0; y < old.length; y++) old[y].hidden = !opened;
+      btn.textContent = '이미 개강한 기수 ' + old.length + '개 ' + (opened ? '접기' : '보기');
+      btn.setAttribute('aria-expanded', opened ? 'true' : 'false');
+    }
+    btn.onclick = function(){ opened = !opened; set(); };
+    set();
+    wrap.parentNode.insertBefore(btn, wrap.nextSibling);
+  })(tables[t]); }
   var cards = document.querySelectorAll('.offer-card[data-open]'), changed = false;
   for(var j = 0; j < cards.length; j++){
     var card = cards[j], ck = stKey(card.getAttribute('data-open'), card.getAttribute('data-close'));
@@ -1897,6 +1919,10 @@ tr.st-past .td-name a,tr.st-done .td-name a{color:var(--muted)}
 .offer-badge.past{background:#ecebe8;color:#7a7a7a}
 .offer-card.is-past h3,.offer-card.is-past .offer-meta dd{color:var(--muted)}
 .table-note[hidden],.past-notice[hidden]{display:none}
+/* 이미 개강한 기수 접기 (2026-10-01) — 버튼은 page() 하단 스크립트가 붙인다 */
+.sched tr[hidden]{display:none}
+.sched-past-btn{display:block;margin:14px auto 0;padding:9px 20px;border:1px solid var(--line);border-radius:999px;background:#fff;font:inherit;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer}
+.sched-past-btn:hover{color:var(--green);border-color:var(--green)}
 .curri tbody td{white-space:normal}
 .td-week{font-weight:800;color:var(--green);white-space:nowrap}
 
