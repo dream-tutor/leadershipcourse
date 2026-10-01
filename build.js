@@ -175,7 +175,9 @@ ${noindex ? `<meta name="robots" content="noindex,follow">` : `<link rel="canoni
 <meta property="article:modified_time" content="${modified}T00:00:00+09:00">
 <meta name="google-site-verification" content="VX3_rCXNNSHvHSQZHKBdGHgiPDfJ0M2wZ6wJtFcq_YU">
 <meta name="naver-site-verification" content="dbd104a111caeca5379e2fd4b5e27f55a5eec692">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230c3b2e'/%3E%3Ctext x='32' y='45' font-size='34' font-weight='bold' text-anchor='middle' fill='%23c6a15b' font-family='Arial'%3EC%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="style.css?v=${CSS_VER}">
 ${ldScripts}
@@ -2439,6 +2441,8 @@ for (const f of fs.readdirSync(assetsSrc)) fs.copyFileSync(path.join(assetsSrc, 
 // sitemap + robots
 const urls = pages.filter((p) => p.file !== "404.html").map((p) => `<url><loc>${BASE_URL}/${p.file === "index.html" ? "" : p.file}</loc><lastmod>${p.lastmod}</lastmod></url>`).join("\n");
 fs.writeFileSync(path.join(OUT, "sitemap.xml"), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>`);
+// 파비콘 파일 — 네이버·구글은 data: 주소로 넣은 아이콘을 수집하지 못해 검색·광고에 지구본으로 나온다(2026-10-01). 실제 파일을 루트에 둔다
+for (const f of fs.readdirSync(path.join(__dirname, "favicon"))) fs.copyFileSync(path.join(__dirname, "favicon", f), path.join(OUT, f));
 fs.writeFileSync(path.join(OUT, "robots.txt"), `User-agent: *\nAllow: /\nSitemap: ${BASE_URL}/sitemap.xml`);
 fs.writeFileSync(path.join(OUT, "CNAME"), BASE_URL.replace(/^https?:\/\//, ""));
 fs.writeFileSync(path.join(OUT, ".nojekyll"), "");
