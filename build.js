@@ -660,7 +660,7 @@ ${galleryHtml(4)}
     </div>
     <h2 class="sec-title" style="margin-top:52px">수강생이 직접 쓴 수료 후기</h2>
     <div class="quote-grid">
-      ${REVIEWS.slice(0, 4).map((rv) => `<blockquote>"${rv.excerpt}"<cite>— ${rv.author} · <a href="reviews.html">전문 보기</a></cite></blockquote>`).join("\n")}
+      ${REVIEWS.slice(0, 4).map((rv) => `<blockquote>"${rv.excerpt}"<cite>— ${rv.author} · <a href="reviews.html">후기 보기</a></cite></blockquote>`).join("\n")}
     </div>
     <p style="margin-top:22px"><a class="btn btn-green" href="reviews.html">수강 후기 전체 보기 →</a></p>
   </div>
@@ -1447,7 +1447,7 @@ function buildReviews() {
   <div class="wrap hero-inner">
     <p class="hero-kicker">Graduates' Stories</p>
     <h1>수강생들이 직접 쓴 <br>데일카네기 수료 후기</h1>
-    <p class="hero-sub">12주가 끝난 뒤, 수강생들의 삶은 어떻게 달라졌을까요. 수료생들이 직접 남긴 이야기입니다.</p>
+    <p class="hero-sub">12주가 끝난 뒤, 수강생들의 삶은 어떻게 달라졌을까요. 수료생들이 남긴 글을 간추려 옮겼습니다.</p>
   </div>
 </section>`;
 
@@ -1455,6 +1455,7 @@ function buildReviews() {
     (rv) => `<article class="review">
       <h2>${rv.title}</h2>
       <p class="review-author">${rv.author}</p>
+      <p><strong>${rv.excerpt}</strong></p>
       ${rv.paras.map((p) => `<p>${p}</p>`).join("\n")}
     </article>`
   ).join("\n");
