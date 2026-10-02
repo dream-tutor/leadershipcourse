@@ -133,6 +133,7 @@ function crumbsJsonld(trail, pageUrl) {
 //   <base href>를 쓰면 #consult 같은 페이지 안 앵커까지 홈으로 튀어 상담 팝업이 안 열린다 (2026-09-30 점검 A2)
 const rootLinks = (html) => html.replace(/(?<![\w-])(href|src)="(?!(?:https?:)?\/\/|\/|#|tel:|mailto:|data:|javascript:)([^"]*)"/g, '$1="/$2"');
 function page({ file, title, desc, body, hero = "", jsonld = null, crumbs = null, noindex = false }) {
+  desc = fitDesc(desc);
   const url = `${BASE_URL}/${file === "index.html" ? "" : file}`;
   const isHome = file === "index.html";
 
@@ -1710,7 +1711,8 @@ ${consultSection({ course: courseKey, region: regionSlug })}`;
   return page({
     file: comboFile(regionSlug, courseKey),
     title: `${r.name} ${c.name} | ${r.name} ${COMBO_KW[courseKey]}`,
-    desc: `${r.name} ${c.name} 안내 — ${c.short} ${c.duration}. ${localRows.length ? `${YEAR_LABEL} ${r.name} 개강 일정과 수강료,` : `${r.name} 개설 일정과`} 커리큘럼, 온라인 상담 신청.`,
+    // 과정 소개 문구(c.short)는 길어서 검색 결과에서 잘렸다 — 기간과 볼 수 있는 것만 짧게 (2026-10-02)
+    desc: `${r.name} ${c.name}, ${c.duration}. ${localRows.length ? `${YEAR_LABEL} ${r.name} 개강 일정과 수강료,` : `${r.name} 개설 일정과`} 커리큘럼, 온라인 상담 신청.`,
     hero,
     body,
     jsonld: {
@@ -2494,3 +2496,36 @@ ${rssItems}
 
 console.log(`생성 완료: ${pages.length - 1}개 페이지 + 404.html + style.css + sitemap.xml + robots.txt → docs/`);
 if (!FORM_ENDPOINT) console.warn("⚠ FORM_ENDPOINT가 비어 있습니다 — 상담 양식이 데모 모드입니다. gas-form.gs 배포 후 data.js에 /exec 주소를 넣고 재생성하세요.");
+
+// 검색 결과 설명문 길이 맞춤 (2026-10-02 사장님 지시 "너무 긴 설명이라 잘리는 것 수정").
+// 네이버는 80자 안팎에서 자른다. 글 중간에서 끊기지 않게 문장 단위로 줄이고,
+// 첫 문장부터 길면 쉼표·가운뎃점·줄표 자리에서 끊는다. 85자 이하는 그대로 둔다.
+function fitDesc(raw, max = 85) {
+  const s = String(raw || "").replace(/\s+/g, " ").trim();
+  if (s.length <= max) return s;
+  const sents = s.split(/(?<=[.?!])\s+/);
+  let out = "", k = 0;
+  for (; k < sents.length; k++) {
+    const next = out ? out + " " + sents[k] : sents[k];
+    if (next.length > max) break;
+    out = next;
+  }
+  if (out.length >= 45) return out;
+  // 남은 첫 문장을 구절 단위로 덧붙인다
+  const room = max - (out ? out.length + 1 : 0);
+  const parts = sents[k].split(/(?<=[,·—])\s+|\s+(?=[—(])/);
+  let cl = "";
+  for (const p of parts) {
+    const next = cl ? cl + " " + p : p;
+    if (next.length > room) break;
+    cl = next;
+  }
+  cl = cl.replace(/[\s,·—(]+$/, "");
+  // 괄호가 열린 채 끊겼으면 그 괄호 앞까지 물린다
+  while ((cl.match(/\(/g) || []).length > (cl.match(/\)/g) || []).length) cl = cl.slice(0, cl.lastIndexOf("(")).replace(/[\s,·—]+$/, "");
+  // 조사로 끝나 말이 끊기거나 너무 짧은 구절은 붙이지 않는다
+  if (out.length >= 30 && (cl.length < 15 || /(과|와|의|을|를|이|가|에|는|은|도|로|고|며)$/.test(cl))) return out;
+  if (cl.length < 15) return out || s.slice(0, max).replace(/\s+\S*$/, "");
+  if (!/[.?!]$/.test(cl)) cl += ".";
+  return out ? out + " " + cl : cl;
+}
