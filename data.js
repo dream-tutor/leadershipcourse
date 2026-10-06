@@ -41,20 +41,21 @@ const SCHEDULE = [
   { name: "광명 CEO",            course: "ceo",   region: "gwangmyeong",   gi: "57",  open: "09.16", close: "12.02", day: "수",   weeks: "12주", fee: 2900000, time: "18:00~22:00" },
   { name: "시흥 CEO",            course: "ceo",   region: "siheung",       gi: "65",  open: "09.17", close: "12.10", day: "목",   weeks: "12주", fee: 2900000, time: "저녁" },
   { name: "의정부양주포천 CEO",    course: "ceo",   region: "uijeongbu",     gi: "28",  open: "09.29", close: "12.22", day: "화",   weeks: "12주", fee: 2900000, time: "저녁" },
-  { name: "이천여주양평 CEO",      course: "ceo",   region: "icheon",        gi: "53",  open: "09.29", close: "12.22", day: "화",   weeks: "12주", fee: 2900000 },
   { name: "부산 CEO",            course: "ceo",   region: "busan",         gi: "78",  open: "09.29", close: "12.15", day: "화",   weeks: "12주", fee: 2900000 },
   { name: "수원 CEO",            course: "ceo",   region: "suwon",         gi: "67",  open: "10.01", close: "12.24", day: "목",   weeks: "12주", fee: 2900000, time: "18:00~22:00" },
   { name: "울산 CEO",            course: "ceo",   region: "ulsan",         gi: "65",  open: "10.01", close: "12.17", day: "목",   weeks: "12주", fee: 2750000 },
   { name: "서울 차세대 경영자",    course: "ceo",   region: "seoul",         gi: "2",   open: "10.01", close: "12.17", day: "목",   weeks: "12주", fee: 3600000, variant: "차세대 경영자 과정" },
+  // 이천여주양평 53: 09.29 → 10.06, 대전 53: 10.13 → 11.03 개강으로 변경 (2026-10-06 본사 개강일정)
+  // 세종 CEO 1기(10.12): 2026-10-06 본사 개강일정 목록에서 빠져 일정표에서 내림
+  { name: "이천여주양평 CEO",      course: "ceo",   region: "icheon",        gi: "53",  open: "10.06", close: "12.22", day: "화",   weeks: "12주", fee: 2900000 },
   // 서울 DCC 528: 본사 목록은 요일 '목' 표기였으나 10.07(수) 개강으로 확정 (2026-09-21 사용자 확인)
   { name: "서울 DCC",           course: "dcc",   region: "seoul",         gi: "528", open: "10.07", close: "11.25", day: "수",   weeks: "8주",  fee: 1300000 },
-  { name: "세종 CEO",            course: "ceo",   region: "sejong",        gi: "1",   open: "10.12", close: "12.28", day: "월",   weeks: "12주", fee: 2900000 },
   { name: "광주 CEO",            course: "ceo",   region: "gwangju",       gi: "64",  open: "10.12", close: "12.28", day: "월",   weeks: "12주", fee: 2900000 },
-  { name: "대전 CEO",            course: "ceo",   region: "daejeon",       gi: "53",  open: "10.13", close: "12.29", day: "화",   weeks: "12주", fee: 2900000 },
   // 서울 TLA 11: 본사 목록의 10.26 개강은 오기 — 10.21(수) 개강으로 확정 (2026-09-21 사용자 확인, 수요일 6주 → 11.25 수료)
   { name: "서울 TLA",            course: "tla",   region: "seoul",         gi: "11",  open: "10.21", close: "11.25", day: "수",   weeks: "6주",  fee: 1300000 },
   { name: "진주 CEO",            course: "ceo",   region: "jinju",         gi: "75",  open: "10.26", close: "01.11", day: "월",   weeks: "12주", fee: 2900000 },
-  { name: "대구 DCC",            course: "dcc",   region: "daegu",         gi: "76",  open: "11.03", close: "12.22", day: "화",   weeks: "8주",  fee: 1300000 },
+  { name: "대전 CEO",            course: "ceo",   region: "daejeon",       gi: "53",  open: "11.03", close: "01.19", day: "화",   weeks: "12주", fee: 2900000 },
+  { name: "대구 DCC",           course: "dcc",   region: "daegu",         gi: "76",  open: "11.03", close: "12.22", day: "화",   weeks: "8주",  fee: 1300000 },
   { name: "대구경북 HIP",         course: "hip",   region: "daegu",         gi: "9",   open: "11.04", close: "12.02", day: "수",   weeks: "5주",  fee: 1300000 },
   // 서울 DYLP 18: 11.12(목)~11.13(금) 이틀 교육으로 확정 (2026-09-21 사용자 확인 — 본사 목록의 개강 11.19는 오기)
   { name: "서울 DYLP",           course: "dylp",  region: "seoul",         gi: "18",  open: "11.12", close: "11.13", day: "목·금", weeks: "2일",  fee: 800000 },
