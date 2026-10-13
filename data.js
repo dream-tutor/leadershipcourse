@@ -300,7 +300,10 @@ const ALUMNI = [
   { branch: "gyeonggi", region: "hwaseong-osan", name: "화성·오산",          acts: ["총동문회", "골프회", "산악회", "징검다리회"] },
   { branch: "gyeonggi", region: "uijeongbu",     name: "의정부·양주·포천",    acts: ["총동문회", "골프회", "산악회", "징검다리회(GA클럽)", "카네기밴드"] },
   { branch: "gyeonggi", region: "paju",          name: "파주",              acts: ["총동문회", "골프회", "산악회", "사막회"] },
-  { branch: "daegu",    region: "daegu",         name: "대구",              acts: ["대구총동문회", "독서클럽(격주 1회)", "골프클럽", "다누리클럽(월 1회)", "체육대회(연 1회)", "회장배 골프대회(연 1회)", "동문회 이·취임식(연 1회)"] },
+  // 광주·하남, 광명: 2026-10-13 사장님 지시로 추가 — 동문회가 큰 지역. 세부 활동 자료를 받기 전이라 총동문회만
+  { branch: "gyeonggi", region: "gwangju-hanam", name: "광주·하남",          acts: ["총동문회"] },
+  { branch: "gyeonggi", region: "gwangmyeong",   name: "광명",              acts: ["총동문회"] },
+  { branch: "daegu",    region: "daegu",         name: "대구",             acts: ["대구총동문회", "독서클럽(격주 1회)", "골프클럽", "다누리클럽(월 1회)", "체육대회(연 1회)", "회장배 골프대회(연 1회)", "동문회 이·취임식(연 1회)"] },
   { branch: "daegu",    region: "pohang",        name: "포항",              acts: ["포항총동문회", "독서클럽(주 1회)", "골프클럽", "산악회(월 1회)", "체육대회(연 1회)", "회장배 골프대회(연 1회)", "동문회 이·취임식(연 1회)"] },
   { branch: "daegu",    region: null,            name: "상주",              acts: ["상주총동문회", "골프클럽", "멀티테마클럽(월 1회)", "체육대회(연 1회)", "동문회 이·취임식(연 1회)"] },
   { branch: "daegu",    region: null,            name: "구미",              acts: ["구미총동문회", "골프클럽", "CRM(월 1회)", "체육대회(연 1회)", "회장배 골프대회(연 1회)", "동문회 이·취임식(연 1회)"] },
