@@ -1,4 +1,20 @@
 /* 데일카네기 공개과정 — 생성 파일 (build.js 실행으로 재생성) */
+/* 개강 지난 과정·캠프 안내 상자 (2026-10-15) */
+.nt-sec{padding-bottom:0}
+.nt-box{background:#fffaf0;border:1.5px solid var(--gold);border-radius:16px;padding:24px 26px;margin:0 0 24px}
+.nt-box.compact{padding:18px 22px}
+.nt-kicker{font-size:13px;font-weight:800;color:var(--gold);letter-spacing:.04em;margin-bottom:6px}
+.nt-title{font-size:21px;line-height:1.4;margin-bottom:10px;color:var(--green-dark)}
+.nt-box.compact .nt-title{font-size:18px}
+.nt-title em{font-style:normal;color:var(--green)}
+.nt-box p{font-size:15px;color:#33403a;text-align:left}
+.nt-open{margin-top:10px;font-size:14px!important}
+.nt-open b{color:var(--green);margin-right:6px}
+.nt-open a{text-decoration:underline}
+.nt-actions{margin-top:16px;display:flex;flex-wrap:wrap;align-items:center;gap:12px 16px}
+.nt-more{font-weight:700;text-decoration:underline}
+@media(max-width:560px){.nt-box{padding:20px 18px}.nt-title{font-size:18px}}
+
 :root{
   --green:#0c3b2e; --green-2:#0f4a3a; --green-dark:#08281f;
   --gold:#c6a15b; --gold-soft:#e7d3a9; --gold-pale:#f4ead3;

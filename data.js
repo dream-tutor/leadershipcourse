@@ -6,6 +6,9 @@
 // 사이트가 올라갈 도메인 (sitemap/og 태그용)
 const BASE_URL = "https://leadershipcourse.co.kr";
 const YEAR_LABEL = "2026 하반기";
+// 이미 개강한 기수의 다음 모집 시기 (2026-10-15 사장님 — CEO 과정 문의가 많은데 올해 기수는 대부분 개강해서
+//   "내년 상반기 예정, 지금 문의 주시면 확정 시 안내" 안내문을 단다). 내년 일정이 나오면 SCHEDULE과 함께 바꿀 것
+const NEXT_TERM = "2027년 상반기";
 
 // 상담 신청 접수 GAS 웹앱 URL — gas-form.gs를 script.google.com에 배포 후 /exec 주소를 붙여넣을 것
 // 비어 있으면 빌드 시 경고가 출력되고, 폼은 데모 모드(시트 기록 없이 완료 화면)로 동작
@@ -315,4 +318,4 @@ const ALUMNI = [
   { branch: "gwangju",  region: "gwangju",       name: "광주",              acts: ["동문회 이·취임식", "골프대회", "바자회", "리프레쉬 교육 및 명사초청 한마음대잔치(연 1회)", "볼링회", "뮤직동호회", "독서동호회(월 1회)"] },
 ];
 
-module.exports = { BASE_URL, YEAR_LABEL, FORM_ENDPOINT, PHONE, SCHEDULE, REGIONS, BRANCH, COURSES, REVIEWS, ALUMNI };
+module.exports = { BASE_URL, YEAR_LABEL, NEXT_TERM, FORM_ENDPOINT, PHONE, SCHEDULE, REGIONS, BRANCH, COURSES, REVIEWS, ALUMNI };
