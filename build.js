@@ -1391,13 +1391,17 @@ function buildRegion(slug) {
 
   const courseKinds = [...new Set(rows.map((s) => s.course))];
   const multi = courseKinds.length > 1;
+  // '모집' 숫자와 부제는 지금 접수 중인 과정만 센다 (2026-10-22 점검 — 개강·종료한 과정까지 세어 대구·서울이 '4개 과정 모집'으로 나왔다).
+  //   빌드 때 정해지는 글이라 개강일이 지나면 다시 빌드할 것
+  const activeKinds = [...new Set(rows.filter(isActive).map((s) => s.course))];
+  const kindName = (k) => (k === "ceo" ? `최고경영자 코스${mainCeo && mainCeo.gi && !mainCeoPast ? " " + mainCeo.gi + "기" : ""}` : COURSES[k] ? COURSES[k].name : k.toUpperCase());
   const heroTitle = mainCeo && !multi
     ? `${r.name} 데일카네기 <br>최고경영자 코스 <span class="gi">${mainCeo.gi ? mainCeo.gi + "기" : "신규"}</span>`
     : multi
-      ? `${r.name} 데일카네기 <br>${YEAR_LABEL} 공개과정 <span class="gi">${courseKinds.length}개 과정 모집</span>`
+      ? `${r.name} 데일카네기 <br>${YEAR_LABEL} 공개과정 <span class="gi">${activeKinds.length ? `${activeKinds.length}개 과정 모집` : "과정 안내"}</span>`
       : `${r.name} 데일카네기 과정 안내`;
   const heroSub = multi
-    ? `최고경영자 코스${mainCeo && mainCeo.gi ? " " + mainCeo.gi + "기" : ""} · ${courseKinds.filter((k) => k !== "ceo").map((k) => (COURSES[k] ? COURSES[k].name : k.toUpperCase())).join(" · ")}`
+    ? (activeKinds.length ? activeKinds : courseKinds).map(kindName).join(" · ")
     : "관계 증진 · 협력 창출 · 리더십 발휘";
   const hasDcc = courseKinds.includes("dcc");
 
@@ -2563,7 +2567,7 @@ ${open.length ? `<section class="section">
 <section class="section${open.length ? " alt" : ""}">
   <div class="wrap">
     <h2 class="sec-title">${YEAR_LABEL} 이미 개강한 과정</h2>
-    <p class="sec-sub">아래 기수는 현재 교육이 진행 중이며, 같은 지역의 다음 기수는 ${NEXT_TERM}에 예정되어 있습니다. 과정명을 누르면 지역 안내로 이동합니다.</p>
+    <p class="sec-sub">아래 기수는 이미 개강했거나 수료를 마쳐 신규 접수가 마감되었습니다. 같은 지역의 다음 기수는 ${NEXT_TERM}에 예정되어 있습니다. 과정명을 누르면 지역 안내로 이동합니다.</p>
     ${scheduleTable(past, { label: `${YEAR_LABEL} 개강 완료 과정` })}
   </div>
 </section>
