@@ -35,6 +35,13 @@ const isoDay = D.isoDay;
 const ST_LABEL = { open: "접수 중", soon: "마감 임박", past: "개강 완료", done: "종료", tba: "일정 문의" };
 function schedStatus(r) { const key = D.schedStatus(r, TODAY_KST); return { key, label: ST_LABEL[key] }; }
 const isActive = (r) => D.isActive(r, TODAY_KST);
+// 사전 안내를 앞세울 때 — 올해 기수 가운데 이미 개강(종료 포함)한 쪽이 더 많을 때 (2026-10-22 사장님 "내년 과정 있으니 미리 문의하는 시스템… 사이트에 잘 반영해줘").
+//   맨 위 알림 띠·홈 첫 화면·상담 창·모바일 메뉴·푸터·빈 일정 칸이 '다음 기수 사전 안내'를 앞세운다. 내년 SCHEDULE 이 들어오면 저절로 꺼진다
+const PREP = SCHEDULE.filter((r) => !isActive(r)).length > SCHEDULE.filter(isActive).length;
+const PREP_LINE = `${NEXT_TERM} 과정 사전 안내 신청을 받고 있습니다`;
+// 올해 남은 기수가 0개가 되면(11.17 뒤) '대부분'·'남은 일정'이 틀린 말이 된다 (10-22 점검)
+const ANY_OPEN = SCHEDULE.some(isActive);
+const MOST = ANY_OPEN ? "대부분" : "모두";
 const openKey = (r) => { const t = schedDate(r.open); return t == null ? "9999" : isoDay(t); };
 const byOpen = (a, b) => openKey(a).localeCompare(openKey(b));
 // 접수 중인 기수 먼저(개강일순) → 이미 개강한 기수는 뒤로
@@ -184,6 +191,7 @@ ${noindex ? `<meta name="robots" content="noindex,follow">` : `<link rel="canoni
 ${ldScripts}
 </head>
 <body>
+${PREP && file !== "next-term.html" && file !== "index.html" ? `<div class="prep-bar"><div class="wrap"><a href="next-term.html"><span class="pb-lead">${YEAR_LABEL} 과정은 ${MOST} 개강했습니다 · </span><b>${PREP_LINE}</b> <span class="pb-go">자세히 보기 →</span></a></div></div>` : ""}
 <header class="site-header">
   <div class="wrap header-inner">
     <a class="brand" href="index.html"><span class="brand-word">카네기<em>코스</em></span><span class="brand-sep" aria-hidden="true"></span><img class="dc-logo" src="assets/dc-logo-black.png" alt="Dale Carnegie" width="900" height="229"></a>
@@ -206,6 +214,7 @@ ${ldScripts}
           <a href="reviews.html">수강 후기</a>
           <a href="guide.html">리더십 칼럼</a>
           <a href="corporate.html">기업교육</a>
+          ${PREP ? `<a href="next-term.html">${NEXT_TERM} 사전 안내</a>` : ""}
           <a href="#consult">상담 신청</a>
         </div>
       </details>
@@ -343,6 +352,7 @@ function footer(dateLabel = "") {
         <p class="footer-logo-cap">데일카네기 공개과정 안내</p>
         <p>Since 1912, 전 세계 90여 개국 900만 명이 수료한 <br>세계 최고의 성인교육 프로그램. <br>대한민국에서는 1992년부터 함께해 왔습니다.</p>
         <a class="btn btn-gold footer-cta" href="#consult">상담 신청하기</a>
+        ${PREP ? `<a class="footer-next" href="next-term.html">${NEXT_TERM} 과정 사전 안내 →</a>` : ""}
       </div>
       <div class="footer-branches">
         <h3>지역별 과정 안내</h3>
@@ -475,6 +485,7 @@ function consultSection(preset = {}) {
         <li>접수는 교육 시작일 일주일 전까지 — 조기 마감될 수 있습니다</li>
         <li>모집 절차: 수강신청 → 서류심사 → 결과 개별안내 → 등록완료 (약 1주일)</li>
         <li>기업 단체교육 · 지역 개설 문의도 환영합니다</li>
+        ${PREP ? `<li>${NEXT_TERM} 과정 사전 안내 신청도 받습니다 — 일정이 정해지는 대로 먼저 연락드립니다</li>` : ""}
       </ul>
     </div>
     <form class="consult-form" id="consultForm" autocomplete="off">
@@ -623,11 +634,17 @@ function buildIndex() {
   <div class="wrap hero-inner">
     <p class="hero-kicker">Since 1912 · Korea 1992 · Transformation Starts Here</p>
     <h1>시대가 변해도 <br>변하지 않는 가치에 집중하라</h1>
-    <p class="hero-sub">전 세계 900만 명이 경험한 데일카네기 트레이닝 — <br>${YEAR_LABEL} 전국 공개과정이 여러분을 기다립니다.</p>
+    ${PREP
+      ? `<p class="hero-sub">전 세계 900만 명이 경험한 데일카네기 트레이닝 — <br>${YEAR_LABEL} 과정은 ${MOST} 개강했고, ${NEXT_TERM} 과정 사전 안내 신청을 받고 있습니다.</p>
+    <div class="hero-actions">
+      <a class="btn btn-gold" href="next-term.html">${NEXT_TERM} 사전 안내</a>
+      <a class="btn btn-line" href="#schedule">${ANY_OPEN ? "올해 남은 일정 보기" : "올해 일정 보기"}</a>
+    </div>`
+      : `<p class="hero-sub">전 세계 900만 명이 경험한 데일카네기 트레이닝 — <br>${YEAR_LABEL} 전국 공개과정이 여러분을 기다립니다.</p>
     <div class="hero-actions">
       <a class="btn btn-gold" href="#schedule">${YEAR_LABEL} 개강 일정 보기</a>
       <a class="btn btn-line" href="#courses">과정 안내</a>
-    </div>
+    </div>`}
   </div>
 </section>
 <section class="stats">
@@ -725,7 +742,9 @@ ${consultSection()}`;
   return page({
     file: "index.html",
     title: `데일카네기 공개과정 | ${YEAR_LABEL} 전국 개강 일정 안내`,
-    desc: `데일카네기 최고경영자 코스·데일카네기 코스(DCC)·리더십·세일즈·프레젠테이션 과정의 ${YEAR_LABEL} 전국 개강 일정. 서울 부산 대구 대전 광주 등 전국 20여 개 지역 개설.`,
+    desc: PREP
+      ? `데일카네기 최고경영자 코스·데일카네기 코스(DCC)·리더십 과정, ${NEXT_TERM} 과정 사전 안내 신청, ${YEAR_LABEL} ${ANY_OPEN ? "남은 개강 일정" : "개강 일정"}, 서울 부산 대구 대전 광주 등 전국 20여 개 지역.`
+      : `데일카네기 최고경영자 코스·데일카네기 코스(DCC)·리더십·세일즈·프레젠테이션 과정의 ${YEAR_LABEL} 전국 개강 일정. 서울 부산 대구 대전 광주 등 전국 20여 개 지역 개설.`,
     hero,
     body,
     jsonld: {
@@ -1255,7 +1274,7 @@ ${rows.length ? `<section class="section">
     ${scheduleTable(rows, { label: `${c.name} 개강 일정표` })}
     ${key === "ceo" ? `<p class="sec-sub" style="margin-top:16px">이 외 지역별 상세 안내는 <a href="index.html#regions">지역별 안내</a>에서 확인하세요.</p>` : ""}
   </div>
-</section>` : `<section class="section"><div class="wrap"><h2 class="sec-title">개강 일정</h2><p class="sec-sub">현재 모집 중인 기수 일정은 문의 시 안내드립니다.</p></div></section>`}
+</section>` : `<section class="section"><div class="wrap"><h2 class="sec-title">개강 일정</h2><p class="sec-sub">현재 모집 중인 기수 일정은 문의 시 안내드립니다.${PREP ? ` ${NEXT_TERM} 과정은 <a href="next-term.html">사전 안내 신청</a>을 받고 있습니다.` : ""}</p></div></section>`}
 
 ${key === "ceo" ? admissionHtml() : ""}
 
@@ -1510,7 +1529,7 @@ ${consultSection({ region: slug })}`;
   return page({
     file: `${slug}.html`,
     title: `${r.name} 데일카네기 최고경영자 코스${titleGi} | ${YEAR_LABEL} ${mainCeoPast ? "과정 안내" : "모집 안내"}`,
-    desc: `${r.name} 데일카네기 최고경영자 코스${titleGi} ${mainCeoPast ? "안내" : "모집"}. ${mainCeo ? `2026년 ${mainCeo.open} 개강${mainCeoPast ? "(진행 중, 다음 기수 모집 예정)" : ""}, 매주 ${mainCeo.day}요일 ${mainCeo.weeks} 과정, 교육비 ${fee(mainCeo.fee)}.` : ""} ${r.venue} · 온라인 상담 신청 접수 중`,
+    desc: `${r.name} 데일카네기 최고경영자 코스${titleGi} ${mainCeoPast ? "안내" : "모집"}. ${mainCeo ? `2026년 ${mainCeo.open} 개강${mainCeoPast ? `(진행 중, 다음 기수 ${NEXT_TERM} 예정·사전 안내)` : ""}, 매주 ${mainCeo.day}요일 ${mainCeo.weeks} 과정, 교육비 ${fee(mainCeo.fee)}.` : ""} ${r.venue} · 온라인 상담 신청 접수 중`,
     hero,
     body,
     jsonld: mainCeo
@@ -1705,7 +1724,7 @@ function buildCombo(regionSlug, courseKey) {
     <h2 class="sec-title">${r.name} 개강 일정</h2>
     <p class="sec-sub">${r.name} 지역의 ${c.name} 개강 일정은 준비 중입니다. 아래 전국 일정을 참고하시거나,
     하단 상담 신청을 남겨 주시면 ${r.name} 인근 개설 소식과 참여 가능한 가까운 일정을 안내드립니다.
-    기업·단체 대상 지역 맞춤 개설 문의도 가능합니다.</p>
+    기업·단체 대상 지역 맞춤 개설 문의도 가능합니다.${PREP ? ` ${NEXT_TERM} 과정은 <a href="next-term.html">사전 안내 신청</a>을 받고 있습니다.` : ""}</p>
     ${allRows.length ? scheduleTable(allRows, { label: `${c.name} 전국 개강 일정표` }) : ""}
   </div>
 </section>`;
@@ -2208,6 +2227,14 @@ tr.st-past .td-name a,tr.st-done .td-name a{color:var(--muted)}
 .footer-regions a{border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:5px 13px;font-size:12.5px;color:#c9d6cf;transition:.15s}
 .footer-regions a:hover{border-color:var(--gold);color:var(--gold)}
 .footer-cta{margin-top:6px;font-size:14px;padding:11px 22px}
+.footer-next{display:inline-block;margin:12px 0 0 2px;color:var(--gold);font-weight:700;font-size:14px;text-decoration:underline;text-underline-offset:3px}
+/* 맨 위 사전 안내 띠 (2026-10-22) — 스크롤하면 위로 사라지고 헤더만 붙는다 */
+.prep-bar{background:var(--green-dark);color:#fff;font-size:13.5px;line-height:1.45}
+.prep-bar a{display:block;padding:9px 0;text-align:center}
+.prep-bar b{color:var(--gold);font-weight:700}
+.prep-bar .pb-go{margin-left:10px;color:#dfe9e2;text-decoration:underline;text-underline-offset:3px}
+.prep-bar a:hover .pb-go{color:#fff}
+@media(max-width:640px){.prep-bar .pb-lead{display:none}.prep-bar{font-size:13px}.prep-bar .pb-go{margin-left:6px}}
 .footer-fine{margin-top:34px;padding-top:18px;border-top:1px solid rgba(255,255,255,.1);color:#71837a;font-size:12.5px}
 .footer-date,.footer-note{display:block;margin-top:6px}
 /* 복사 방지(전역 user-select:none·이미지 끌기 막기, 우클릭·F12·드래그·선택 막는 스크립트)는 2026-09-29 해제 —

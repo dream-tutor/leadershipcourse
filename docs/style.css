@@ -417,6 +417,14 @@ tr.st-past .td-name a,tr.st-done .td-name a{color:var(--muted)}
 .footer-regions a{border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:5px 13px;font-size:12.5px;color:#c9d6cf;transition:.15s}
 .footer-regions a:hover{border-color:var(--gold);color:var(--gold)}
 .footer-cta{margin-top:6px;font-size:14px;padding:11px 22px}
+.footer-next{display:inline-block;margin:12px 0 0 2px;color:var(--gold);font-weight:700;font-size:14px;text-decoration:underline;text-underline-offset:3px}
+/* 맨 위 사전 안내 띠 (2026-10-22) — 스크롤하면 위로 사라지고 헤더만 붙는다 */
+.prep-bar{background:var(--green-dark);color:#fff;font-size:13.5px;line-height:1.45}
+.prep-bar a{display:block;padding:9px 0;text-align:center}
+.prep-bar b{color:var(--gold);font-weight:700}
+.prep-bar .pb-go{margin-left:10px;color:#dfe9e2;text-decoration:underline;text-underline-offset:3px}
+.prep-bar a:hover .pb-go{color:#fff}
+@media(max-width:640px){.prep-bar .pb-lead{display:none}.prep-bar{font-size:13px}.prep-bar .pb-go{margin-left:6px}}
 .footer-fine{margin-top:34px;padding-top:18px;border-top:1px solid rgba(255,255,255,.1);color:#71837a;font-size:12.5px}
 .footer-date,.footer-note{display:block;margin-top:6px}
 /* 복사 방지(전역 user-select:none·이미지 끌기 막기, 우클릭·F12·드래그·선택 막는 스크립트)는 2026-09-29 해제 —
