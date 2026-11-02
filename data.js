@@ -64,6 +64,10 @@ const SCHEDULE = [
   // 서울 DYLP 18: 11.12(목)~11.13(금) 이틀 교육으로 확정 (2026-09-21 사용자 확인 — 본사 목록의 개강 11.19는 오기)
   { name: "서울 DYLP",           course: "dylp",  region: "seoul",         gi: "18",  open: "11.12", close: "11.13", day: "목·금", weeks: "2일",  fee: 800000 },
   { name: "대전 CEO",            course: "ceo",   region: "daejeon",       gi: "53",  open: "11.17", close: "02.02", day: "화",   weeks: "12주", fee: 2900000 },
+  // 2026-11-02 본사 '공지 전 사전 안내'(사장님 전달) — 수강료는 아직 안내받지 못해 비워 둔다(화면 '미정'). 금액을 지어 넣지 말 것.
+  //   서울 청소년 과정은 기수 번호 없이 12.28(월)~12.29(화) 이틀, 초6~고1 대상
+  { name: "서울 청소년",          course: "youth", region: "seoul",         gi: "",    open: "12.28", close: "12.29", day: "월·화", weeks: "2일",  fee: null, variant: "초6~고1 대상" },
+  { name: "서울 CEO",            course: "ceo",   region: "seoul",         gi: "104", open: "01.12", close: "03.30", day: "화",   weeks: "12주", fee: null },
 ];
 
 // ------------------------------------------------------------

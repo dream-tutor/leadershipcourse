@@ -16,7 +16,7 @@ const OUT = path.join(__dirname, "docs"); // GitHub Pages 배포 폴더 (main �
 const CSS_VER = Date.now().toString(36); // 빌드마다 갱신 — CSS 캐시 어긋남 방지
 fs.mkdirSync(OUT, { recursive: true });
 
-const fee = (v) => (v == null ? "미정" : v.toLocaleString("ko-KR") + "원");
+const fee = (v) => (v == null ? "상담 시 안내" : v.toLocaleString("ko-KR") + "원");
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 // ------------------------------------------------------------
@@ -35,6 +35,11 @@ const isoDay = D.isoDay;
 const ST_LABEL = { open: "접수 중", soon: "마감 임박", past: "개강 완료", done: "종료", tba: "일정 문의" };
 function schedStatus(r) { const key = D.schedStatus(r, TODAY_KST); return { key, label: ST_LABEL[key] }; }
 const isActive = (r) => D.isActive(r, TODAY_KST);
+// 개강 연도 — 1월 개강 기수(서울 CEO 104 2027.01.12)가 "2026년"으로 찍히지 않게 데이터 날짜에서 읽는다
+const openYear = (r) => new Date(D.schedDate(r.open, TODAY_KST)).getUTCFullYear();
+// 일정표 날짜 칸 — YEAR_LABEL(2026 하반기)과 다른 해에 열리는 기수만 연도를 붙인다 ("2027.01.12")
+const BASE_YEAR = parseInt(YEAR_LABEL, 10);
+const openLabel = (r) => (D.schedDate(r.open, TODAY_KST) != null && openYear(r) !== BASE_YEAR ? `${openYear(r)}.${r.open}` : r.open);
 // 사전 안내를 앞세울 때 — 올해 기수 가운데 이미 개강(종료 포함)한 쪽이 더 많을 때 (2026-10-22 사장님 "내년 과정 있으니 미리 문의하는 시스템… 사이트에 잘 반영해줘").
 //   맨 위 알림 띠·홈 첫 화면·상담 창·모바일 메뉴·푸터·빈 일정 칸이 '다음 기수 사전 안내'를 앞세운다. 내년 SCHEDULE 이 들어오면 저절로 꺼진다
 const PREP = SCHEDULE.filter((r) => !isActive(r)).length > SCHEDULE.filter(isActive).length;
@@ -397,7 +402,7 @@ function scheduleTable(rows, { linkRegion = true, label = "개강 일정표" } =
         <td class="td-name">${name}</td>
         <td class="td-status"><span class="st-badge">${st.label}</span></td>
         <td>${r.gi ? r.gi + "기" : "-"}</td>
-        <td>${r.open || "-"}</td>
+        <td>${r.open ? openLabel(r) : "-"}</td>
         <td>${r.day || "-"}</td>
         <td>${r.weeks || "-"}</td>
         <td class="td-fee">${fee(r.fee)}</td>
@@ -1442,8 +1447,8 @@ function buildRegion(slug) {
     <dl class="info-list">
       <div><dt>지원 대상</dt><dd>국내외 공·사기업 CEO / 기업 및 기관의 임원, 정부 및 주요기관의 공무원·기관장·단체장, 전문직 및 사회 각 분야의 오피니언 리더</dd></div>
       <div><dt>교육 장소</dt><dd>${r.venue}</dd></div>
-      <div><dt>교육 일정</dt><dd>2026년 ${mainCeo.open} 개강 · 매주 ${mainCeo.day}요일${mainCeo.time ? " " + mainCeo.time : ""} (${mainCeo.weeks} 과정)</dd></div>
-      <div><dt>교 육 비</dt><dd>${fee(mainCeo.fee)} (1인)${mainCeo.includes ? `<br><span class="dd-note">포함: ${mainCeo.includes}</span>` : ""}</dd></div>
+      <div><dt>교육 일정</dt><dd>${openYear(mainCeo)}년 ${mainCeo.open} 개강 · 매주 ${mainCeo.day}요일${mainCeo.time ? " " + mainCeo.time : ""} (${mainCeo.weeks} 과정)</dd></div>
+      <div><dt>교 육 비</dt><dd>${fee(mainCeo.fee)}${mainCeo.fee != null ? " (1인)" : ""}${mainCeo.includes ? `<br><span class="dd-note">포함: ${mainCeo.includes}</span>` : ""}</dd></div>
       <div><dt>접수 기간</dt><dd>교육 시작일 일주일 전까지 &nbsp;※ 조기 마감될 수 있습니다</dd></div>
       <div><dt>모집 절차</dt><dd>수강신청 → 서류심사 → 결과 개별안내 → 수강료 납부 → 등록완료 (약 1주일 소요)</dd></div>
       <div><dt>문의·접수</dt><dd><a href="#consult">하단 상담 신청 양식으로 접수해 주세요 →</a></dd></div>
@@ -1528,8 +1533,8 @@ ${consultSection({ region: slug })}`;
   const titleGi = mainCeo && mainCeo.gi ? ` ${mainCeo.gi}기` : "";
   return page({
     file: `${slug}.html`,
-    title: `${r.name} 데일카네기 최고경영자 코스${titleGi} | ${YEAR_LABEL} ${mainCeoPast ? "과정 안내" : "모집 안내"}`,
-    desc: `${r.name} 데일카네기 최고경영자 코스${titleGi} ${mainCeoPast ? "안내" : "모집"}. ${mainCeo ? `2026년 ${mainCeo.open} 개강${mainCeoPast ? `(진행 중, 다음 기수 ${NEXT_TERM} 예정·사전 안내)` : ""}, 매주 ${mainCeo.day}요일 ${mainCeo.weeks} 과정, 교육비 ${fee(mainCeo.fee)}.` : ""} ${r.venue} · 온라인 상담 신청 접수 중`,
+    title: `${r.name} 데일카네기 최고경영자 코스${titleGi} | ${mainCeo && !mainCeoPast && openYear(mainCeo) !== BASE_YEAR ? NEXT_TERM.replace("년", "") : YEAR_LABEL} ${mainCeoPast ? "과정 안내" : "모집 안내"}`,
+    desc: `${r.name} 데일카네기 최고경영자 코스${titleGi} ${mainCeoPast ? "안내" : "모집"}. ${mainCeo ? `${openYear(mainCeo)}년 ${mainCeo.open} 개강${mainCeoPast ? `(진행 중, 다음 기수 ${NEXT_TERM} 예정·사전 안내)` : ""}, 매주 ${mainCeo.day}요일 ${mainCeo.weeks} 과정, 교육비 ${fee(mainCeo.fee)}.` : ""} ${r.venue} · 온라인 상담 신청 접수 중`,
     hero,
     body,
     jsonld: mainCeo
@@ -2649,6 +2654,8 @@ const YOUTH_CAMP_FAQ = [
 function buildYouthCamp() {
   const c = COURSES.youth;
   const d = DETAIL.youth;
+  // 2026-11-02 본사 사전 안내(서울 12.28~29, 초6~고1) — 접수 중인 청소년 기수가 있으면 날짜를 보여 준다
+  const youthOpen = SCHEDULE.filter((x) => x.course === "youth" && isActive(x));
   const hero = `<section class="hero hero-course">
   <div class="wrap hero-inner">
     <p class="hero-kicker">YOUTH CAMP · ${esc(c.eng)}</p>
@@ -2667,6 +2674,7 @@ function buildYouthCamp() {
       <div><span>기간</span><strong>3일 집중 캠프 (방학 시즌)</strong></div>
       <div><span>대상</span><strong>초 · 중 · 고등학생</strong></div>
     </div>
+    ${youthOpen.length ? `<p class="lead" style="margin-top:18px"><b>다가오는 일정</b> — ${youthOpen.map((x) => `${REGIONS[x.region].name} ${x.open}(${x.day.split("·")[0]})~${x.close}(${x.day.split("·").pop()}) ${x.weeks}${x.variant ? ", " + x.variant.replace(/ 대상$/, "") + " 대상" : ""}`).join(" · ")}.</p>` : ""}
   </div>
 </section>
 
