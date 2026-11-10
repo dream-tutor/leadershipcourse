@@ -39,12 +39,15 @@ const isActive = (r) => D.isActive(r, TODAY_KST);
 const openYear = (r) => new Date(D.schedDate(r.open, TODAY_KST)).getUTCFullYear();
 // 일정표 날짜 칸 — YEAR_LABEL(2026 하반기)과 다른 해에 열리는 기수만 연도를 붙인다 ("2027.01.12")
 const BASE_YEAR = parseInt(YEAR_LABEL, 10);
-const openLabel = (r) => (D.schedDate(r.open, TODAY_KST) != null && openYear(r) !== BASE_YEAR ? `${openYear(r)}.${r.open}` : r.open);
+// 올해(YEAR_LABEL) 묶음에 드는 기수인가 — 일정 미정(tba)은 올해 쪽으로 센다 (openYear 는 날짜가 없으면 1970 을 돌려준다)
+const inBaseYear = (r) => D.schedDate(r.open, TODAY_KST) == null || openYear(r) === BASE_YEAR;
+const openLabel = (r) => (inBaseYear(r) ? r.open : `${openYear(r)}.${r.open}`);
 // 사전 안내를 앞세울 때 — 올해 기수 가운데 이미 개강(종료 포함)한 쪽이 더 많을 때 (2026-10-22 사장님 "내년 과정 있으니 미리 문의하는 시스템… 사이트에 잘 반영해줘").
 //   맨 위 알림 띠·홈 첫 화면·상담 창·모바일 메뉴·푸터·빈 일정 칸이 '다음 기수 사전 안내'를 앞세운다. 내년 SCHEDULE 이 들어오면 저절로 꺼진다
 const PREP = SCHEDULE.filter((r) => !isActive(r)).length > SCHEDULE.filter(isActive).length;
 const PREP_LINE = `${NEXT_TERM} 과정 사전 안내 신청을 받고 있습니다`;
-// 올해 남은 기수가 0개가 되면(11.17 뒤) '대부분'·'남은 일정'이 틀린 말이 된다 (10-22 점검)
+// 남은 기수가 0개가 되면 '대부분'·'남은 일정'이 틀린 말이 된다 (10-22 점검).
+//   11-02 서울 청소년(12.28)·서울 CEO 104기(2027.01.12)가 들어와 11.17 뒤에도 남은 기수가 있다 — 0개가 되는 것은 01.12 개강 뒤 (11-10 점검 A1-3)
 const ANY_OPEN = SCHEDULE.some(isActive);
 const MOST = ANY_OPEN ? "대부분" : "모두";
 const openKey = (r) => { const t = schedDate(r.open); return t == null ? "9999" : isoDay(t); };
@@ -54,7 +57,7 @@ const bySchedule = (a, b) => (isActive(a) === isActive(b) ? byOpen(a, b) : isAct
 // 수료일은 화면에 표기하지 않는다 — 개강일만 (2026-09-21 사용자 지시). close는 '종료' 상태 계산에만 쓴다.
 //   단, 주 단위가 아닌 연속 과정(weeks가 "2일" 등)은 교육일 자체가 일정이므로 "11.12~11.13 (2일)"로 표기하고 '매주'를 붙이지 않는다
 const isDayCourse = (r) => /일$/.test(String(r.weeks || ""));
-const periodText = (r) => (schedDate(r.open) == null ? `${r.open} 개강 예정 · 세부 일정은 문의 시 안내` : isDayCourse(r) && r.close ? `${r.open}~${r.close} (${r.weeks})` : `${r.open} 개강 (${r.weeks})`);
+const periodText = (r) => (schedDate(r.open) == null ? `${r.open} 개강 예정 · 세부 일정은 문의 시 안내` : isDayCourse(r) && r.close ? `${r.open}~${r.close} (${r.weeks})` : `${openLabel(r)} 개강 (${r.weeks})`);
 
 // ------------------------------------------------------------
 // 페이지 날짜 — 파일명 시드 기반, 월 단위로만 변동 (주간 랜덤 회전 없음)
@@ -321,6 +324,8 @@ ${footer(dateLabel)}
       pn.hidden = false;
       var rl = ci.querySelector('.live-recruit'); if(rl) rl.textContent = '안내';
     }
+    var ps = ik === 'done' && pn ? pn.querySelector('.pn-state[data-done]') : null;
+    if(ps) ps.textContent = ps.getAttribute('data-done');
   }
   var stats = document.querySelectorAll('[data-live-rows]');
   for(var s = 0; s < stats.length; s++){
@@ -411,7 +416,8 @@ function scheduleTable(rows, { linkRegion = true, label = "개강 일정표" } =
     .join("\n");
   // '개강 완료' 안내문은 늘 넣어 두고, 빌드 시점에 개강한 기수가 없으면 숨긴다 — 접속 시점에 개강한 행이 생기면 하단 스크립트가 연다
   const hasPast = rows.some((r) => !isActive(r));
-  return `<p class="table-hint">← 표를 옆으로 밀어서 볼 수 있습니다</p>
+  // 글자 안내는 표 오른쪽에 무엇이 있는지로 끝맺는다 (09-23 화면 규칙, 11-10 점검 B-5)
+  return `<p class="table-hint">← 옆으로 밀면 요일·기간·수강료 칸이 이어집니다</p>
   <div class="table-wrap" tabindex="0" role="region" aria-label="${esc(label)}"><table class="sched">
     <thead><tr><th>과정</th><th>상태</th><th>기수</th><th>개강</th><th>요일</th><th>기간</th><th>수강료</th></tr></thead>
     <tbody>${tr}</tbody>
@@ -425,13 +431,15 @@ function scheduleTable(rows, { linkRegion = true, label = "개강 일정표" } =
 //   아직 접수 중인 CEO 기수는 함께 보여 준다(올해 안에 들을 수 있는 길을 먼저 알린다).
 // ------------------------------------------------------------
 function nextTermBox({ course = "ceo", compact = false } = {}) {
-  const rows = SCHEDULE.filter((r) => r.course === course);
+  // '전국 N개 기수 중' 집계는 올해(YEAR_LABEL) 기수만 센다 — 2027.01.12 서울 CEO 104기가 '2026 하반기' 숫자에 섞이지 않게 (11-10 점검 A1-1)
+  const all = SCHEDULE.filter((r) => r.course === course);
+  const rows = all.filter(inBaseYear);
   const past = rows.filter((r) => !isActive(r));
   if (!past.length) return "";
-  const open = rows.filter(isActive).sort(byOpen);
+  const open = all.filter(isActive).sort(byOpen);
   const c = COURSES[course];
   const openText = open.length
-    ? `<p class="nt-open"><b>올해 아직 접수 중</b> ${open.map((r) => `<a href="${r.region}.html">${r.name}${r.gi ? " " + r.gi + "기" : ""} (${r.open} 개강)</a>`).join(" · ")}</p>`
+    ? `<p class="nt-open"><b>아직 접수 중</b> ${open.map((r) => `<a href="${r.region}.html">${r.name}${r.gi ? " " + r.gi + "기" : ""} (${openLabel(r)} 개강)</a>`).join(" · ")}</p>`
     : "";
   return `<div class="nt-box${compact ? " compact" : ""}" role="note">
   <p class="nt-kicker">${YEAR_LABEL} ${c.name} 안내</p>
@@ -606,7 +614,7 @@ function buildIndex() {
           : `${regionNames.join("·")} ${rows.length}개 기수 모집 중`;
       const label = k === "ceo" ? "경영자 · 임원을 위한 대표 과정" : "모든 성인을 위한 원조 프로그램";
       // 집계 문구는 접속 시점에 다시 계산한다 — 기수마다 "지역|개강일(ISO, 미정이면 빈칸)|표기" (하단 스크립트)
-      const liveRows = rows.map((x) => `${REGIONS[x.region].name}|${isoDay(schedDate(x.open))}|${x.open}`).join(";");
+      const liveRows = rows.map((x) => `${REGIONS[x.region].name}|${isoDay(schedDate(x.open))}|${openLabel(x)}`).join(";");
       return `<a class="course-card featured" href="${c.slug}.html">
         <span class="course-code">${c.code}</span>
         <p class="course-label">${label}</p>
@@ -614,7 +622,7 @@ function buildIndex() {
         <p class="course-tag">${c.tag}</p>
         <p class="course-short">${c.short}</p>
         <span class="course-meta">${c.duration}</span>
-        <span class="course-stat" data-live-kind="${k}" data-live-rows="${esc(liveRows)}">${stat}${next ? ` · 가장 빠른 개강 ${next.open}` : ""}</span>
+        <span class="course-stat" data-live-kind="${k}" data-live-rows="${esc(liveRows)}">${stat}${next ? ` · 가장 빠른 개강 ${openLabel(next)}` : ""}</span>
         <span class="course-more">자세히 보기 →</span>
       </a>`;
     })
@@ -1372,9 +1380,10 @@ function regionOffersHtml(slug, allRows) {
     </a>`;
   }).join("\n");
   const kinds = [...new Set(sorted.map((x) => x.course))].length;
+  // 다른 해에 열리는 기수(2027.01.12 서울 CEO 104기)가 섞이면 '2026 하반기'를 붙이지 않는다 (11-10 점검 A1-1)
   return `<section class="section" id="offers">
   <div class="wrap">
-    <h2 class="sec-title">${r.name} ${YEAR_LABEL} 모집 중인 과정</h2>
+    <h2 class="sec-title">${r.name} ${rows.every(inBaseYear) ? YEAR_LABEL + " " : ""}모집 중인 과정</h2>
     <p class="sec-sub" data-live-offers="${r.name}">${kinds > 1 ? `${r.name}에서는 ${kinds}개 과정 ${sorted.length}개 기수가 접수 중입니다. 카드를 누르면 과정별 안내로 이동합니다.` : `${r.name}에서 현재 접수 중인 기수입니다. 접수는 교육 시작 일주일 전까지이며 조기 마감될 수 있습니다.`}</p>
     <div class="offer-grid">${cards}</div>
   </div>
@@ -1412,6 +1421,10 @@ function buildRegion(slug) {
   const ceoRows = rows.filter((s) => s.course === "ceo" && !s.variant);
   const mainCeo = ceoRows.find(isActive) || ceoRows[0];
   const mainCeoPast = !!mainCeo && !isActive(mainCeo);
+  // 수료일까지 지난 기수(done)에는 '현재 진행 중'이라 쓰지 않는다 (11-10 점검 A1-4). 접속 시점에 수료일이 지나면 하단 스크립트가 data-done 문장으로 바꾼다
+  const mainCeoDone = !!mainCeo && schedStatus(mainCeo).key === "done";
+  const PN_RUN = "현재 진행 중인 기수로 신규 접수는 마감되었습니다.";
+  const PN_DONE = "이미 교육을 마친 기수로 신규 접수는 마감되었습니다.";
 
   const courseKinds = [...new Set(rows.map((s) => s.course))];
   const multi = courseKinds.length > 1;
@@ -1422,7 +1435,7 @@ function buildRegion(slug) {
   const heroTitle = mainCeo && !multi
     ? `${r.name} 데일카네기 <br>최고경영자 코스 <span class="gi">${mainCeo.gi ? mainCeo.gi + "기" : "신규"}</span>`
     : multi
-      ? `${r.name} 데일카네기 <br>${YEAR_LABEL} 공개과정 <span class="gi">${activeKinds.length ? `${activeKinds.length}개 과정 모집` : "과정 안내"}</span>`
+      ? `${r.name} 데일카네기 <br>${rows.filter(isActive).every(inBaseYear) ? YEAR_LABEL + " " : ""}공개과정 <span class="gi">${activeKinds.length ? `${activeKinds.length}개 과정 모집` : "과정 안내"}</span>`
       : `${r.name} 데일카네기 과정 안내`;
   const heroSub = multi
     ? (activeKinds.length ? activeKinds : courseKinds).map(kindName).join(" · ")
@@ -1443,7 +1456,7 @@ function buildRegion(slug) {
     ? `<section class="section alt" id="ceo-info"${ceoOpenIso ? ` data-open="${ceoOpenIso}" data-close="${isoDay(closeDate(mainCeo))}"` : ""}>
   <div class="wrap narrow">
     <h2 class="sec-title">${r.name} 최고경영자 코스 ${mainCeo.gi ? mainCeo.gi + "기" : ""} <span class="live-recruit">${mainCeoPast ? "안내" : "모집 안내"}</span></h2>
-    ${mainCeoPast || ceoOpenIso ? `<p class="past-notice"${mainCeoPast ? "" : " hidden"}><strong>${mainCeo.gi ? mainCeo.gi + "기는 " : ""}${mainCeo.open} 개강 완료</strong> — 현재 진행 중인 기수로 신규 접수는 마감되었습니다. ${r.name} 다음 기수는 <strong>${NEXT_TERM}</strong>에 예정되어 있으며, 일정은 모집 상황에 따라 바뀔 수 있어 상담 시 안내드립니다. <a href="next-term.html">사전 안내 보기 →</a></p>` : ""}
+    ${mainCeoPast || ceoOpenIso ? `<p class="past-notice"${mainCeoPast ? "" : " hidden"}><strong>${mainCeo.gi ? mainCeo.gi + "기는 " : ""}${mainCeo.open} 개강 완료</strong> — <span class="pn-state" data-done="${PN_DONE}">${mainCeoDone ? PN_DONE : PN_RUN}</span> ${r.name} 다음 기수는 <strong>${NEXT_TERM}</strong>에 예정되어 있으며, 일정은 모집 상황에 따라 바뀔 수 있어 상담 시 안내드립니다. <a href="next-term.html">사전 안내 보기 →</a></p>` : ""}
     <dl class="info-list">
       <div><dt>지원 대상</dt><dd>국내외 공·사기업 CEO / 기업 및 기관의 임원, 정부 및 주요기관의 공무원·기관장·단체장, 전문직 및 사회 각 분야의 오피니언 리더</dd></div>
       <div><dt>교육 장소</dt><dd>${r.venue}</dd></div>
@@ -1533,8 +1546,9 @@ ${consultSection({ region: slug })}`;
   const titleGi = mainCeo && mainCeo.gi ? ` ${mainCeo.gi}기` : "";
   return page({
     file: `${slug}.html`,
-    title: `${r.name} 데일카네기 최고경영자 코스${titleGi} | ${mainCeo && !mainCeoPast && openYear(mainCeo) !== BASE_YEAR ? NEXT_TERM.replace("년", "") : YEAR_LABEL} ${mainCeoPast ? "과정 안내" : "모집 안내"}`,
-    desc: `${r.name} 데일카네기 최고경영자 코스${titleGi} ${mainCeoPast ? "안내" : "모집"}. ${mainCeo ? `${openYear(mainCeo)}년 ${mainCeo.open} 개강${mainCeoPast ? `(진행 중, 다음 기수 ${NEXT_TERM} 예정·사전 안내)` : ""}, 매주 ${mainCeo.day}요일 ${mainCeo.weeks} 과정, 교육비 ${fee(mainCeo.fee)}.` : ""} ${r.venue} · 온라인 상담 신청 접수 중`,
+    // 개설 기수가 없는 지역(천안·아산·세종·청주·전북·포항·목포·여수)은 모집 안내로 쓰지 않는다 (11-10 점검 A2-7)
+    title: !mainCeo ? `${r.name} 데일카네기 최고경영자 코스 | 과정 안내·개설 문의` : `${r.name} 데일카네기 최고경영자 코스${titleGi} | ${mainCeo && !mainCeoPast && openYear(mainCeo) !== BASE_YEAR ? NEXT_TERM.replace("년", "") : YEAR_LABEL} ${mainCeoPast ? "과정 안내" : "모집 안내"}`,
+    desc: !mainCeo ? `${r.name} 데일카네기 최고경영자 코스 안내. 현재 접수 중인 기수 없음, 개설 문의는 온라인 상담 신청. ${r.venue}` : `${r.name} 데일카네기 최고경영자 코스${titleGi} ${mainCeoPast ? "안내" : "모집"}. ${mainCeo ? `${openYear(mainCeo)}년 ${mainCeo.open} 개강${mainCeoPast ? `(${mainCeoDone ? "교육 종료" : "진행 중"}, 다음 기수 ${NEXT_TERM} 예정·사전 안내)` : ""}, 매주 ${mainCeo.day}요일 ${mainCeo.weeks} 과정, 교육비 ${fee(mainCeo.fee)}.` : ""} ${r.venue} · 온라인 상담 신청 접수 중`,
     hero,
     body,
     jsonld: mainCeo
@@ -1543,7 +1557,7 @@ ${consultSection({ region: slug })}`;
           "@type": "Course",
           name: `${r.name} 데일카네기 최고경영자 코스${titleGi}`,
           description: `관계 증진·협력 창출·리더십 발휘 — ${r.name}에서 열리는 데일카네기 최고경영자 코스`,
-          provider: { "@type": "Organization", name: "데일카네기코리아 " + b.label },
+          provider: { "@type": "Organization", name: /^데일카네기코리아/.test(b.label) ? b.label : "데일카네기코리아 " + b.label },
         }
       : null,
   });
@@ -2544,7 +2558,7 @@ const faqListHtml = (items) => `<div class="faq-list">
 function buildNextTerm() {
   const past = SCHEDULE.filter((r) => !isActive(r));
   const open = SCHEDULE.filter(isActive);
-  const ceoAll = SCHEDULE.filter((r) => r.course === "ceo");
+  const ceoAll = SCHEDULE.filter((r) => r.course === "ceo" && inBaseYear(r)); // 올해 기수만 센다 (11-10 점검 A1-1)
   const ceoPast = ceoAll.filter((r) => !isActive(r));
   const hero = `<section class="hero hero-sm">
   <div class="wrap hero-inner">
@@ -2590,9 +2604,9 @@ function buildNextTerm() {
 
 ${open.length ? `<section class="section">
   <div class="wrap">
-    <h2 class="sec-title">올해 아직 접수 중인 과정</h2>
-    <p class="sec-sub">내년까지 기다리기 어려우시면 아래 기수를 먼저 확인해 보세요. 접수는 교육 시작 일주일 전까지이며, 모집 상황에 따라 조기 마감되거나 일정이 바뀔 수 있습니다.</p>
-    ${scheduleTable(open, { label: `${YEAR_LABEL} 접수 중인 과정` })}
+    <h2 class="sec-title">아직 접수 중인 과정</h2>
+    <p class="sec-sub">개강이 지난 지역의 다음 기수까지 기다리기 어려우시면 아래 기수를 먼저 확인해 보세요. 접수는 교육 시작 일주일 전까지이며, 모집 상황에 따라 조기 마감되거나 일정이 바뀔 수 있습니다.</p>
+    ${scheduleTable(open, { label: "접수 중인 과정" })}
   </div>
 </section>` : ""}
 
@@ -2836,7 +2850,8 @@ const RSS_ITEMS = [
   ...REVIEWS.map((rv, i) => ({
     title: `[수강 후기] ${rv.title}`,
     link: `${BASE_URL}/reviews.html`,
-    date: `Mon, ${String(13 + i).padStart(2, "0")} Jul 2026 09:00:00 +0900`,
+    // 요일을 고정 문자열로 쓰면 날짜와 어긋난다(14~19일이 모두 'Mon'이었다, 11-10 점검 A2-5) — 칼럼 항목처럼 계산한다
+    date: new Date(`2026-07-${String(13 + i).padStart(2, "0")}T09:00:00+09:00`).toUTCString(),
     desc: rv.excerpt,
   })),
   ...GUIDES.map((g) => ({

@@ -22,7 +22,7 @@
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<link rel="stylesheet" href="/style.css?v=mw1lnhju">
+<link rel="stylesheet" href="/style.css?v=mwao4uz3">
 
 </head>
 <body>
@@ -353,6 +353,8 @@
       pn.hidden = false;
       var rl = ci.querySelector('.live-recruit'); if(rl) rl.textContent = '안내';
     }
+    var ps = ik === 'done' && pn ? pn.querySelector('.pn-state[data-done]') : null;
+    if(ps) ps.textContent = ps.getAttribute('data-done');
   }
   var stats = document.querySelectorAll('[data-live-rows]');
   for(var s = 0; s < stats.length; s++){
