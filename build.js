@@ -312,7 +312,7 @@ ${footer(dateLabel)}
       var cc = all[m].getAttribute('data-course') || m;
       if(!kinds[cc]){ kinds[cc] = 1; kc++; }
     }
-    sub.textContent = !n ? rn + ' 지역에서 지금 접수 중인 기수는 없습니다. 아래 카드는 이미 개강한 기수이며, 다음 기수는 ${NEXT_TERM}에 예정되어 있습니다. 개설 소식은 하단 상담 신청을 남겨 주시면 가장 먼저 안내드립니다.'
+    sub.textContent = !n ? rn + ' 지역에서 지금 접수 중인 기수는 없습니다. 아래 카드는 이미 개강한 기수이며, ' + (sub.getAttribute('data-next-tbd') ? '다음 기수 일정은 모집 상황에 따라 정해집니다.' : '다음 기수는 ${NEXT_TERM}에 예정되어 있습니다.') + ' 개설 소식은 하단 상담 신청을 남겨 주시면 가장 먼저 안내드립니다.'
       : kc > 1 ? rn + '에서는 ' + kc + '개 과정 ' + n + '개 기수가 접수 중입니다. 카드를 누르면 과정별 안내로 이동합니다.'
       : rn + '에서 지금 접수 중인 기수는 ' + n + '개입니다. 접수는 교육 시작 일주일 전까지이며 조기 마감될 수 있습니다.';
   }
@@ -416,13 +416,16 @@ function scheduleTable(rows, { linkRegion = true, label = "개강 일정표" } =
     .join("\n");
   // '개강 완료' 안내문은 늘 넣어 두고, 빌드 시점에 개강한 기수가 없으면 숨긴다 — 접속 시점에 개강한 행이 생기면 하단 스크립트가 연다
   const hasPast = rows.some((r) => !isActive(r));
+  // 표에 YEAR_LABEL 묶음 밖의 기수가 이미 개강해 있으면(서울 CEO 104기 2027.01.12 뒤) '해당 과정의 다음 기수는 NEXT_TERM' 이 그 기수에는 맞지 않는다 —
+  //   그때는 YEAR_LABEL 과정에 한정해 말한다. 그 전에는 글자가 그대로다 (2026-11-17)
+  const noteScope = rows.some((r) => !inBaseYear(r) && !isActive(r)) ? `${YEAR_LABEL} 과정의` : "해당 과정의";
   // 글자 안내는 표 오른쪽에 무엇이 있는지로 끝맺는다 (09-23 화면 규칙, 11-10 점검 B-5)
   return `<p class="table-hint">← 옆으로 밀면 요일·기간·수강료 칸이 이어집니다</p>
   <div class="table-wrap" tabindex="0" role="region" aria-label="${esc(label)}"><table class="sched">
     <thead><tr><th>과정</th><th>상태</th><th>기수</th><th>개강</th><th>요일</th><th>기간</th><th>수강료</th></tr></thead>
     <tbody>${tr}</tbody>
   </table></div>
-  <p class="table-note sched-note"${hasPast ? "" : " hidden"}>‘개강 완료’는 이미 시작한 기수입니다. 해당 과정의 다음 기수는 <strong>${NEXT_TERM}</strong>에 예정되어 있습니다. 일정은 모집 인원과 신청 상황에 따라 바뀔 수 있어 상담 시 안내드립니다. <a href="next-term.html">${NEXT_TERM} 사전 안내 보기 →</a></p>`;
+  <p class="table-note sched-note"${hasPast ? "" : " hidden"}>‘개강 완료’는 이미 시작한 기수입니다. ${noteScope} 다음 기수는 <strong>${NEXT_TERM}</strong>에 예정되어 있습니다. 일정은 모집 인원과 신청 상황에 따라 바뀔 수 있어 상담 시 안내드립니다. <a href="next-term.html">${NEXT_TERM} 사전 안내 보기 →</a></p>`;
 }
 
 // ------------------------------------------------------------
@@ -1345,12 +1348,12 @@ function regionOffersHtml(slug, allRows) {
   const past = allRows.filter((x) => !isActive(x));
   if (!rows.length) {
     const pastText = past.length
-      ? `이미 개강한 기수: ${past.map((x) => `${x.name}${x.gi ? " " + x.gi + "기" : ""}(${x.open} 개강)`).join(", ")}. `
+      ? `이미 개강한 기수: ${past.map((x) => `${x.name}${x.gi ? " " + x.gi + "기" : ""}(${openLabel(x)} 개강)`).join(", ")}. `
       : "";
     return `<section class="section" id="offers">
   <div class="wrap narrow">
-    <h2 class="sec-title">${r.name} ${YEAR_LABEL} 모집 중인 과정</h2>
-    <p class="sec-sub">현재 ${r.name} 지역에서 접수 중인 기수가 없습니다. ${pastText}${past.length ? `다음 기수는 ${NEXT_TERM}에 예정되어 있으며, 개설 소식은` : "다음 기수 개설 소식은"} 하단 상담 신청을 남겨 주시면 가장 먼저 안내드립니다.
+    <h2 class="sec-title">${r.name} ${allRows.every(inBaseYear) ? YEAR_LABEL + " " : ""}모집 중인 과정</h2>
+    <p class="sec-sub">현재 ${r.name} 지역에서 접수 중인 기수가 없습니다. ${pastText}${past.length ? (past.some((x) => !inBaseYear(x)) ? "다음 기수 일정은 모집 상황에 따라 정해지며, 개설 소식은" : `다음 기수는 ${NEXT_TERM}에 예정되어 있으며, 개설 소식은`) : "다음 기수 개설 소식은"} 하단 상담 신청을 남겨 주시면 가장 먼저 안내드립니다.
     아래 과정별 안내에서 ${r.name} 과정 소개와 전국 개강 일정을 확인하실 수 있습니다.</p>
   </div>
 </section>`;
@@ -1384,7 +1387,7 @@ function regionOffersHtml(slug, allRows) {
   return `<section class="section" id="offers">
   <div class="wrap">
     <h2 class="sec-title">${r.name} ${rows.every(inBaseYear) ? YEAR_LABEL + " " : ""}모집 중인 과정</h2>
-    <p class="sec-sub" data-live-offers="${r.name}">${kinds > 1 ? `${r.name}에서는 ${kinds}개 과정 ${sorted.length}개 기수가 접수 중입니다. 카드를 누르면 과정별 안내로 이동합니다.` : `${r.name}에서 현재 접수 중인 기수입니다. 접수는 교육 시작 일주일 전까지이며 조기 마감될 수 있습니다.`}</p>
+    <p class="sec-sub" data-live-offers="${r.name}"${allRows.some((x) => !inBaseYear(x)) ? ' data-next-tbd="1"' : ""}>${kinds > 1 ? `${r.name}에서는 ${kinds}개 과정 ${sorted.length}개 기수가 접수 중입니다. 카드를 누르면 과정별 안내로 이동합니다.` : `${r.name}에서 현재 접수 중인 기수입니다. 접수는 교육 시작 일주일 전까지이며 조기 마감될 수 있습니다.`}</p>
     <div class="offer-grid">${cards}</div>
   </div>
 </section>`;
@@ -1417,10 +1420,22 @@ function buildRegion(slug) {
   const r = REGIONS[slug];
   const b = BRANCH[r.branch];
   const rows = SCHEDULE.filter((s) => s.region === slug);
-  // 대표 CEO 기수: 정규 CEO 과정(변형 과정 제외) 중 접수 중인 것 우선, 없으면 이미 개강한 기수(개강 완료 표기)
+  // 대표 CEO 기수: 정규 CEO 과정(변형 과정 제외) 중 접수 중인 것 우선, 없으면 가장 늦게 개강한 기수(개강 완료 표기).
+  //   예전에는 없으면 목록의 첫 기수라, 정규 CEO 기수가 둘인 서울은 104기가 개강(2027.01.12)한 뒤 이미 끝난 103기가 대표로 돌아갔다
+  //   (2026-11-17 — 날짜만 바꾼 사본 빌드로 확인. 제목·설명문·CEO 안내 칸이 103기 기준이 됐다).
+  //   접수 중인 기수가 없을 때는 모두 개강일이 있는 기수다(일정 미정은 접수 중으로 센다) — 그래도 개강일을 못 읽는 줄은 맨 뒤로 보낸다
   const ceoRows = rows.filter((s) => s.course === "ceo" && !s.variant);
-  const mainCeo = ceoRows.find(isActive) || ceoRows[0];
+  const mainCeo = ceoRows.find(isActive) || ceoRows.slice().sort((a, b) => (schedDate(b.open) ?? -Infinity) - (schedDate(a.open) ?? -Infinity))[0];
   const mainCeoPast = !!mainCeo && !isActive(mainCeo);
+  // 대표 기수가 YEAR_LABEL(2026 하반기) 묶음 밖의 기수인가 — 지금은 서울 104기(2027.01.12)뿐이고 그 기수가 NEXT_TERM 기수다.
+  //   그런 기수는 제목에 그 기수의 학기 이름을 쓰고, 개강 뒤 안내에서 '다음 기수는 NEXT_TERM 에 예정'이라고 하지 않는다 —
+  //   묶음 밖 기수의 그다음 일정은 아직 모른다(일정을 지어 쓰지 않는다). 사전 안내(next-term) 링크 대신 상담 신청으로 잇는다
+  const mainCeoOther = !!mainCeo && !inBaseYear(mainCeo);
+  const mainCeoTerm = !mainCeoOther ? YEAR_LABEL : NEXT_TERM.startsWith(String(openYear(mainCeo))) ? NEXT_TERM.replace("년", "") : `${openYear(mainCeo)}년`;
+  const nextCeoLine = mainCeoOther
+    ? `${r.name} 다음 기수 일정은 모집 상황에 따라 정해지며 상담 시 안내드립니다. <a href="#consult">상담 신청 →</a>`
+    : `${r.name} 다음 기수는 <strong>${NEXT_TERM}</strong>에 예정되어 있으며, 일정은 모집 상황에 따라 바뀔 수 있어 상담 시 안내드립니다. <a href="next-term.html">사전 안내 보기 →</a>`;
+  const nextCeoDesc = mainCeoOther ? "다음 기수 일정은 상담 시 안내" : `다음 기수 ${NEXT_TERM} 예정·사전 안내`;
   // 수료일까지 지난 기수(done)에는 '현재 진행 중'이라 쓰지 않는다 (11-10 점검 A1-4). 접속 시점에 수료일이 지나면 하단 스크립트가 data-done 문장으로 바꾼다
   const mainCeoDone = !!mainCeo && schedStatus(mainCeo).key === "done";
   const PN_RUN = "현재 진행 중인 기수로 신규 접수는 마감되었습니다.";
@@ -1435,7 +1450,7 @@ function buildRegion(slug) {
   const heroTitle = mainCeo && !multi
     ? `${r.name} 데일카네기 <br>최고경영자 코스 <span class="gi">${mainCeo.gi ? mainCeo.gi + "기" : "신규"}</span>`
     : multi
-      ? `${r.name} 데일카네기 <br>${rows.filter(isActive).every(inBaseYear) ? YEAR_LABEL + " " : ""}공개과정 <span class="gi">${activeKinds.length ? `${activeKinds.length}개 과정 모집` : "과정 안내"}</span>`
+      ? `${r.name} 데일카네기 <br>${(rows.some(isActive) ? rows.filter(isActive) : rows).every(inBaseYear) ? YEAR_LABEL + " " : ""}공개과정 <span class="gi">${activeKinds.length ? `${activeKinds.length}개 과정 모집` : "과정 안내"}</span>`
       : `${r.name} 데일카네기 과정 안내`;
   const heroSub = multi
     ? (activeKinds.length ? activeKinds : courseKinds).map(kindName).join(" · ")
@@ -1456,7 +1471,7 @@ function buildRegion(slug) {
     ? `<section class="section alt" id="ceo-info"${ceoOpenIso ? ` data-open="${ceoOpenIso}" data-close="${isoDay(closeDate(mainCeo))}"` : ""}>
   <div class="wrap narrow">
     <h2 class="sec-title">${r.name} 최고경영자 코스 ${mainCeo.gi ? mainCeo.gi + "기" : ""} <span class="live-recruit">${mainCeoPast ? "안내" : "모집 안내"}</span></h2>
-    ${mainCeoPast || ceoOpenIso ? `<p class="past-notice"${mainCeoPast ? "" : " hidden"}><strong>${mainCeo.gi ? mainCeo.gi + "기는 " : ""}${mainCeo.open} 개강 완료</strong> — <span class="pn-state" data-done="${PN_DONE}">${mainCeoDone ? PN_DONE : PN_RUN}</span> ${r.name} 다음 기수는 <strong>${NEXT_TERM}</strong>에 예정되어 있으며, 일정은 모집 상황에 따라 바뀔 수 있어 상담 시 안내드립니다. <a href="next-term.html">사전 안내 보기 →</a></p>` : ""}
+    ${mainCeoPast || ceoOpenIso ? `<p class="past-notice"${mainCeoPast ? "" : " hidden"}><strong>${mainCeo.gi ? mainCeo.gi + "기는 " : ""}${openLabel(mainCeo)} 개강 완료</strong> — <span class="pn-state" data-done="${PN_DONE}">${mainCeoDone ? PN_DONE : PN_RUN}</span> ${nextCeoLine}</p>` : ""}
     <dl class="info-list">
       <div><dt>지원 대상</dt><dd>국내외 공·사기업 CEO / 기업 및 기관의 임원, 정부 및 주요기관의 공무원·기관장·단체장, 전문직 및 사회 각 분야의 오피니언 리더</dd></div>
       <div><dt>교육 장소</dt><dd>${r.venue}</dd></div>
@@ -1547,8 +1562,8 @@ ${consultSection({ region: slug })}`;
   return page({
     file: `${slug}.html`,
     // 개설 기수가 없는 지역(천안·아산·세종·청주·전북·포항·목포·여수)은 모집 안내로 쓰지 않는다 (11-10 점검 A2-7)
-    title: !mainCeo ? `${r.name} 데일카네기 최고경영자 코스 | 과정 안내·개설 문의` : `${r.name} 데일카네기 최고경영자 코스${titleGi} | ${mainCeo && !mainCeoPast && openYear(mainCeo) !== BASE_YEAR ? NEXT_TERM.replace("년", "") : YEAR_LABEL} ${mainCeoPast ? "과정 안내" : "모집 안내"}`,
-    desc: !mainCeo ? `${r.name} 데일카네기 최고경영자 코스 안내. 현재 접수 중인 기수 없음, 개설 문의는 온라인 상담 신청. ${r.venue}` : `${r.name} 데일카네기 최고경영자 코스${titleGi} ${mainCeoPast ? "안내" : "모집"}. ${mainCeo ? `${openYear(mainCeo)}년 ${mainCeo.open} 개강${mainCeoPast ? `(${mainCeoDone ? "교육 종료" : "진행 중"}, 다음 기수 ${NEXT_TERM} 예정·사전 안내)` : ""}, 매주 ${mainCeo.day}요일 ${mainCeo.weeks} 과정, 교육비 ${fee(mainCeo.fee)}.` : ""} ${r.venue} · 온라인 상담 신청 접수 중`,
+    title: !mainCeo ? `${r.name} 데일카네기 최고경영자 코스 | 과정 안내·개설 문의` : `${r.name} 데일카네기 최고경영자 코스${titleGi} | ${mainCeoTerm} ${mainCeoPast ? "과정 안내" : "모집 안내"}`,
+    desc: !mainCeo ? `${r.name} 데일카네기 최고경영자 코스 안내. 현재 접수 중인 기수 없음, 개설 문의는 온라인 상담 신청. ${r.venue}` : `${r.name} 데일카네기 최고경영자 코스${titleGi} ${mainCeoPast ? "안내" : "모집"}. ${mainCeo ? `${openYear(mainCeo)}년 ${mainCeo.open} 개강${mainCeoPast ? `(${mainCeoDone ? "교육 종료" : "진행 중"}, ${nextCeoDesc})` : ""}, 매주 ${mainCeo.day}요일 ${mainCeo.weeks} 과정, 교육비 ${fee(mainCeo.fee)}.` : ""} ${r.venue} · 온라인 상담 신청 접수 중`,
     hero,
     body,
     jsonld: mainCeo
@@ -2556,7 +2571,9 @@ const faqListHtml = (items) => `<div class="faq-list">
     </div>`;
 
 function buildNextTerm() {
-  const past = SCHEDULE.filter((r) => !isActive(r));
+  // 이 페이지의 지난 기수 칸은 "YEAR_LABEL 이미 개강한 과정"이고 "같은 지역의 다음 기수는 NEXT_TERM 에 예정"이라고 말한다 —
+  //   YEAR_LABEL 묶음 밖 기수(서울 CEO 104기 2027.01.12)는 개강한 뒤에도 이 칸에 싣지 않는다 (2026-11-17)
+  const past = SCHEDULE.filter((r) => !isActive(r) && inBaseYear(r));
   const open = SCHEDULE.filter(isActive);
   const ceoAll = SCHEDULE.filter((r) => r.course === "ceo" && inBaseYear(r)); // 올해 기수만 센다 (11-10 점검 A1-1)
   const ceoPast = ceoAll.filter((r) => !isActive(r));

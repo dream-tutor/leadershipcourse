@@ -22,7 +22,7 @@
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<link rel="stylesheet" href="style.css?v=mweddfqi">
+<link rel="stylesheet" href="style.css?v=mwk8pymr">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"Course","name":"파주 신임리더 리더십 과정","description":"파주 신임리더 · 예비 관리자 교육 — 탁월한 실무자였던 신임리더가 리더의 역량을 갖추도록 돕는 2일 집중 과정","provider":{"@type":"Organization","name":"데일카네기 공개과정"},"datePublished":"2026-07-21","dateModified":"2026-11-05"}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"홈","item":"https://leadershipcourse.co.kr/"},{"@type":"ListItem","position":2,"name":"지역별 안내","item":"https://leadershipcourse.co.kr/#regions"},{"@type":"ListItem","position":3,"name":"파주","item":"https://leadershipcourse.co.kr/paju.html"},{"@type":"ListItem","position":4,"name":"파주 신임리더 리더십 과정","item":"https://leadershipcourse.co.kr/paju-dylp.html"}]}</script>
 </head>
@@ -87,9 +87,9 @@
     <p class="table-hint">← 옆으로 밀면 요일·기간·수강료 칸이 이어집니다</p>
   <div class="table-wrap" tabindex="0" role="region" aria-label="신임리더 리더십 과정 전국 개강 일정표"><table class="sched">
     <thead><tr><th>과정</th><th>상태</th><th>기수</th><th>개강</th><th>요일</th><th>기간</th><th>수강료</th></tr></thead>
-    <tbody><tr class="st-past" data-open="2026-11-12" data-close="2026-11-13">
+    <tbody><tr class="st-done" data-open="2026-11-12" data-close="2026-11-13">
         <td class="td-name"><a href="seoul.html">서울 DYLP</a></td>
-        <td class="td-status"><span class="st-badge">개강 완료</span></td>
+        <td class="td-status"><span class="st-badge">종료</span></td>
         <td>18기</td>
         <td>11.12</td>
         <td>목·금</td>
@@ -403,7 +403,7 @@
       var cc = all[m].getAttribute('data-course') || m;
       if(!kinds[cc]){ kinds[cc] = 1; kc++; }
     }
-    sub.textContent = !n ? rn + ' 지역에서 지금 접수 중인 기수는 없습니다. 아래 카드는 이미 개강한 기수이며, 다음 기수는 2027년 상반기에 예정되어 있습니다. 개설 소식은 하단 상담 신청을 남겨 주시면 가장 먼저 안내드립니다.'
+    sub.textContent = !n ? rn + ' 지역에서 지금 접수 중인 기수는 없습니다. 아래 카드는 이미 개강한 기수이며, ' + (sub.getAttribute('data-next-tbd') ? '다음 기수 일정은 모집 상황에 따라 정해집니다.' : '다음 기수는 2027년 상반기에 예정되어 있습니다.') + ' 개설 소식은 하단 상담 신청을 남겨 주시면 가장 먼저 안내드립니다.'
       : kc > 1 ? rn + '에서는 ' + kc + '개 과정 ' + n + '개 기수가 접수 중입니다. 카드를 누르면 과정별 안내로 이동합니다.'
       : rn + '에서 지금 접수 중인 기수는 ' + n + '개입니다. 접수는 교육 시작 일주일 전까지이며 조기 마감될 수 있습니다.';
   }
