@@ -58,6 +58,84 @@ const bySchedule = (a, b) => (isActive(a) === isActive(b) ? byOpen(a, b) : isAct
 //   단, 주 단위가 아닌 연속 과정(weeks가 "2일" 등)은 교육일 자체가 일정이므로 "11.12~11.13 (2일)"로 표기하고 '매주'를 붙이지 않는다
 const isDayCourse = (r) => /일$/.test(String(r.weeks || ""));
 const periodText = (r) => (schedDate(r.open) == null ? `${r.open} 개강 예정 · 세부 일정은 문의 시 안내` : isDayCourse(r) && r.close ? `${r.open}~${r.close} (${r.weeks})` : `${openLabel(r)} 개강 (${r.weeks})`);
+// 받침에 따라 조사를 고른다 — 과정 이름 뒤에 '를·는'을 그대로 붙여 '리더십 과정를'·'프레젠테이션를'이 나오던 것 (2026-11-17)
+const hasBatchim = (s) => { const t = String(s).trim(); const c = t.charCodeAt(t.length - 1); return c >= 0xac00 && c <= 0xd7a3 && (c - 0xac00) % 28 !== 0; };
+const josa = (s, withBatchim, without) => `${s}${hasBatchim(s) ? withBatchim : without}`;
+
+// ------------------------------------------------------------
+// 청소년 과정(카네기 청소년 리더십 과정) — 2026-11-17 본사 안내문 기준. 사실은 data.js SCHEDULE 의 youth 줄에서 읽는다
+//   접수 중인 청소년 기수가 있으면 일정·시간·대상·정원·장소·수강료·식사·수료를 보여 주고, 없으면 '다음 방학 과정은 상담 시 안내'만 남긴다.
+//   ⚠ 청소년 과정의 다음 일정은 받은 적이 없다 — '다음 기수는 NEXT_TERM 예정' 문장(nextTermBox·청소년만 든 일정표 아래 안내)은 쓰지 않는다
+// ------------------------------------------------------------
+const youthOpenRows = () => SCHEDULE.filter((x) => x.course === "youth" && isActive(x));
+const dayFirst = (x) => String(x.day || "").split("·")[0];
+const dayLast = (x) => String(x.day || "").split("·").pop();
+// "12.28(월)~12.29(화)"
+const youthDates = (x) => `${x.open}(${dayFirst(x)})~${x.close}(${dayLast(x)})`;
+// "12월 28일(월)~29일(화)" — 문장 안에서 쓴다
+const youthDatesLong = (x) => {
+  const [om, od] = x.open.split(".").map(Number), [cm, cd] = x.close.split(".").map(Number);
+  return `${om}월 ${od}일(${dayFirst(x)})~${cm === om ? "" : cm + "월 "}${cd}일(${dayLast(x)})`;
+};
+// 방학 이름 — 12~2월 개강이면 겨울방학, 7~8월이면 여름방학
+const youthSeason = (x) => { const m = Number(x.open.split(".")[0]); return m === 12 || m <= 2 ? "겨울방학" : m === 7 || m === 8 ? "여름방학" : "방학"; };
+const youthSeasonLabel = (x) => `${openYear(x)} ${youthSeason(x)}`;
+// 문장 안에서는 "2일" 대신 "이틀"
+const daysWord = (x) => ({ "2일": "이틀", "3일": "사흘" }[x.weeks] || x.weeks);
+const feeMan = (v) => (v % 10000 === 0 ? `${(v / 10000).toLocaleString("ko-KR")}만 원` : fee(v));
+// 구조화 데이터(Course.hasCourseInstance) — 일정·수강료가 안내문으로 확정된 청소년 기수만 내보낸다
+const youthInstanceLd = (x) => ({
+  "@type": "CourseInstance",
+  name: `${REGIONS[x.region].name} ${COURSES.youth.name}`,
+  courseMode: "onsite",
+  startDate: isoDay(schedDate(x.open)),
+  endDate: isoDay(closeDate(x)),
+  ...(x.hours ? { courseWorkload: `PT${x.hours}H` } : {}),
+  location: { "@type": "Place", name: REGIONS[x.region].venue.replace(/\s*\(.*$/, ""), address: { "@type": "PostalAddress", addressLocality: REGIONS[x.region].name, addressCountry: "KR" } },
+  // offers.category 는 구글 Course 안내의 값(Free·Partially Free·Subscription·Paid) 가운데 하나로 (검토 지적)
+  ...(x.fee != null ? { offers: { "@type": "Offer", price: x.fee, priceCurrency: "KRW", category: "Paid" } } : {}),
+});
+// 모집 안내 칸. 접속 시점에 개강일이 지나 있으면 하단 스크립트가 .lu-open 을 숨기고 .lu-past 를 연다([data-live-until])
+//   region 을 주면 그 지역 기수만 — 그 지역에 접수 중인 청소년 기수가 없으면 아무것도 내지 않는다(지역×과정 페이지용)
+function youthAdmissionHtml({ alt = false, id = "admission", region = null } = {}) {
+  const rows = youthOpenRows().filter((x) => !region || x.region === region);
+  const pastNote = `지금 접수 중인 청소년 과정은 없습니다. 다음 방학 과정은 일정이 정해지는 대로 안내드리니, 상담 신청에 자녀 학년과 희망 지역을 남겨 주세요.`;
+  if (!rows.length) {
+    if (region) return "";
+    return `<section class="section${alt ? " alt" : ""}" id="${id}">
+  <div class="wrap narrow">
+    <h2 class="sec-title">방학 과정 모집 안내</h2>
+    <p class="sec-sub">${pastNote}</p>
+    <p><a class="btn btn-green" href="#consult">상담 신청 →</a></p>
+  </div>
+</section>`;
+  }
+  const blocks = rows.map((x) => {
+    const r = REGIONS[x.region];
+    return `<div data-live-until="${isoDay(schedDate(x.open))}">
+      <div class="lu-open">
+        <dl class="info-list">
+          <div><dt>일 정</dt><dd>${openYear(x)}.${youthDates(x)} · ${x.weeks}</dd></div>
+          ${x.time ? `<div><dt>시 간</dt><dd>매일 ${x.time}${x.hours ? ` (${x.weeks} 총 ${x.hours}시간)` : ""}</dd></div>` : ""}
+          <div><dt>대 상</dt><dd>${COURSES.youth.target}${x.quota ? ` · 반 정원 ${x.quota}명, 정원이 차면 접수를 마감합니다` : ""}</dd></div>
+          <div><dt>장 소</dt><dd>${r.name} · ${r.venue}</dd></div>
+          <div><dt>수강료</dt><dd>${x.fee != null ? feeMan(x.fee) : fee(x.fee)}</dd></div>
+          ${x.meal ? `<div><dt>식 사</dt><dd>${x.meal}</dd></div>` : ""}
+          ${x.cert ? `<div><dt>수 료</dt><dd>${x.cert} 발급 · 마지막 모듈의 비전 발표까지 마친 학생에게 드립니다</dd></div>` : ""}
+          <div><dt>문의·접수</dt><dd><a href="#consult">상담 신청 양식으로 접수해 주세요 →</a></dd></div>
+        </dl>
+      </div>
+      <p class="sec-sub lu-past" hidden>${r.name} ${youthSeason(x)} 과정(${x.open}~${x.close})은 개강했습니다. ${pastNote}</p>
+    </div>`;
+  }).join("\n");
+  return `<section class="section${alt ? " alt" : ""}" id="${id}">
+  <div class="wrap narrow">
+    <h2 class="sec-title">${youthSeasonLabel(rows[0])} 모집 안내</h2>
+    <p class="sec-sub">본사 안내(2026년 11월) 기준입니다. 일정과 수강료는 모집 상황에 따라 바뀔 수 있어, 접수 때 다시 확인해 드립니다.</p>
+    ${blocks}
+  </div>
+</section>`;
+}
 
 // ------------------------------------------------------------
 // 페이지 날짜 — 파일명 시드 기반, 월 단위로만 변동 (주간 랜덤 회전 없음)
@@ -327,6 +405,15 @@ ${footer(dateLabel)}
     var ps = ik === 'done' && pn ? pn.querySelector('.pn-state[data-done]') : null;
     if(ps) ps.textContent = ps.getAttribute('data-done');
   }
+  // 청소년 모집 안내 칸([data-live-until] = 개강일) — 접속 시점에 개강일이 지났으면 모집 요강(.lu-open)을 접고 '개강했습니다' 안내(.lu-past)를 연다
+  var lus = document.querySelectorAll('[data-live-until]');
+  for(var u = 0; u < lus.length; u++){
+    var lk = stKey(lus[u].getAttribute('data-live-until'), '');
+    if(lk !== 'past' && lk !== 'done') continue;
+    var lo = lus[u].querySelectorAll('.lu-open'), lp = lus[u].querySelectorAll('.lu-past');
+    for(var a1 = 0; a1 < lo.length; a1++) lo[a1].hidden = true;
+    for(var a2 = 0; a2 < lp.length; a2++) lp[a2].hidden = false;
+  }
   var stats = document.querySelectorAll('[data-live-rows]');
   for(var s = 0; s < stats.length; s++){
     var el = stats[s], raw = el.getAttribute('data-live-rows'), list = raw ? raw.split(';') : [], act = [], names = [], seen = {}, nx = null;
@@ -419,13 +506,18 @@ function scheduleTable(rows, { linkRegion = true, label = "개강 일정표" } =
   // 표에 YEAR_LABEL 묶음 밖의 기수가 이미 개강해 있으면(서울 CEO 104기 2027.01.12 뒤) '해당 과정의 다음 기수는 NEXT_TERM' 이 그 기수에는 맞지 않는다 —
   //   그때는 YEAR_LABEL 과정에 한정해 말한다. 그 전에는 글자가 그대로다 (2026-11-17)
   const noteScope = rows.some((r) => !inBaseYear(r) && !isActive(r)) ? `${YEAR_LABEL} 과정의` : "해당 과정의";
+  // 청소년 과정만 든 표(youth.html·<지역>-youth.html)에는 'NEXT_TERM 다음 기수'를 쓰지 않는다 — 다음 방학 일정은 받은 적이 없다 (2026-11-17)
+  const onlyYouth = rows.length > 0 && rows.every((r) => r.course === "youth");
+  const note = onlyYouth
+    ? `‘개강 완료’는 이미 시작한 과정입니다. 다음 방학 과정은 일정이 정해지는 대로 상담으로 안내드립니다. <a href="#consult">상담 신청 →</a>`
+    : `‘개강 완료’는 이미 시작한 기수입니다. ${noteScope} 다음 기수는 <strong>${NEXT_TERM}</strong>에 예정되어 있습니다. 일정은 모집 인원과 신청 상황에 따라 바뀔 수 있어 상담 시 안내드립니다. <a href="next-term.html">${NEXT_TERM} 사전 안내 보기 →</a>`;
   // 글자 안내는 표 오른쪽에 무엇이 있는지로 끝맺는다 (09-23 화면 규칙, 11-10 점검 B-5)
   return `<p class="table-hint">← 옆으로 밀면 요일·기간·수강료 칸이 이어집니다</p>
   <div class="table-wrap" tabindex="0" role="region" aria-label="${esc(label)}"><table class="sched">
     <thead><tr><th>과정</th><th>상태</th><th>기수</th><th>개강</th><th>요일</th><th>기간</th><th>수강료</th></tr></thead>
     <tbody>${tr}</tbody>
   </table></div>
-  <p class="table-note sched-note"${hasPast ? "" : " hidden"}>‘개강 완료’는 이미 시작한 기수입니다. ${noteScope} 다음 기수는 <strong>${NEXT_TERM}</strong>에 예정되어 있습니다. 일정은 모집 인원과 신청 상황에 따라 바뀔 수 있어 상담 시 안내드립니다. <a href="next-term.html">${NEXT_TERM} 사전 안내 보기 →</a></p>`;
+  <p class="table-note sched-note"${hasPast ? "" : " hidden"}>${note}</p>`;
 }
 
 // ------------------------------------------------------------
@@ -434,6 +526,8 @@ function scheduleTable(rows, { linkRegion = true, label = "개강 일정표" } =
 //   아직 접수 중인 CEO 기수는 함께 보여 준다(올해 안에 들을 수 있는 길을 먼저 알린다).
 // ------------------------------------------------------------
 function nextTermBox({ course = "ceo", compact = false } = {}) {
+  // 청소년 과정은 방학에 맞춰 열리고 다음 일정을 받은 적이 없다 — 'NEXT_TERM 다음 기수 예정' 상자를 달지 않는다 (2026-11-17, youthAdmissionHtml 이 대신 안내)
+  if (course === "youth") return "";
   // '전국 N개 기수 중' 집계는 올해(YEAR_LABEL) 기수만 센다 — 2027.01.12 서울 CEO 104기가 '2026 하반기' 숫자에 섞이지 않게 (11-10 점검 A1-1)
   const all = SCHEDULE.filter((r) => r.course === course);
   const rows = all.filter(inBaseYear);
@@ -447,7 +541,7 @@ function nextTermBox({ course = "ceo", compact = false } = {}) {
   return `<div class="nt-box${compact ? " compact" : ""}" role="note">
   <p class="nt-kicker">${YEAR_LABEL} ${c.name} 안내</p>
   <h2 class="nt-title">개강이 지난 지역은 <em>${NEXT_TERM}</em> 다음 기수가 예정되어 있습니다</h2>
-  <p>${YEAR_LABEL} ${c.name}는 전국 ${rows.length}개 기수 중 <b>${past.length}개 기수가 이미 개강</b>해 신규 접수가 마감되었습니다.
+  <p>${YEAR_LABEL} ${josa(c.name, "은", "는")} 전국 ${rows.length}개 기수 중 <b>${past.length}개 기수가 이미 개강</b>해 신규 접수가 마감되었습니다.
   일정은 모집 인원과 신청 상황에 따라 바뀌는 경우가 많아, 지금 문의를 남겨 주시면 <b>상담으로 개별 안내</b>드립니다.</p>
   ${openText}
   <div class="nt-actions"><a class="btn btn-gold" href="#consult">${NEXT_TERM} 사전 안내 신청</a>${compact ? ` <a class="nt-more" href="next-term.html">자세히 보기 →</a>` : ""}</div>
@@ -479,6 +573,9 @@ function galleryHtml(count = 4, title = "교육 현장") {
 }
 
 function consultSection(preset = {}) {
+  // 청소년 과정·캠프 페이지에서 여는 상담 창인가 — 안내 줄과 칸 예시를 학부모에게 맞춘다(칸 이름·시트 열은 그대로)
+  const youthPreset = preset.course === "youth" || preset.course === "youth-camp";
+  const youthQuota = youthPreset ? (youthOpenRows().find((x) => x.quota) || {}).quota : null;
   const courseOpts = Object.values(COURSES)
     .map((c) => `<option value="${c.name}"${preset.course === c.slug ? " selected" : ""}>${c.name} (${c.code})</option>`)
     .join("") + `<option value="기업 맞춤 교육"${preset.course === "corporate" ? " selected" : ""}>기업 맞춤 교육 (사내·단체)</option>`
@@ -498,10 +595,15 @@ function consultSection(preset = {}) {
       <h2>상담 신청</h2>
       <p>과정 선택이 고민되시거나 일정·수강료가 궁금하시면 <br>아래 양식으로 남겨 주세요. 확인 후 순차적으로 연락드립니다.</p>
       <ul class="consult-points">
-        <li>접수는 교육 시작일 일주일 전까지 — 조기 마감될 수 있습니다</li>
+        ${youthPreset
+          // 청소년 페이지의 상담 창 — 성인 과정용 안내(개강 일주일 전 마감·서류심사)는 안내문에 없는 말이라 쓰지 않는다 (2026-11-17 검토)
+          ? `<li>${youthQuota ? `청소년 과정은 반 정원 ${youthQuota}명이 차면 접수를 마감합니다` : "청소년 과정은 방학에 맞춰 열리며, 일정이 나오면 먼저 연락드립니다"}</li>
+        <li>자녀 학년과 희망 지역을 적어 주시면 맞는 일정을 안내드립니다</li>
+        <li>학교 · 기업 단위 단체 캠프 문의도 환영합니다</li>`
+          : `<li>접수는 교육 시작일 일주일 전까지 — 조기 마감될 수 있습니다</li>
         <li>모집 절차: 수강신청 → 서류심사 → 결과 개별안내 → 등록완료 (약 1주일)</li>
         <li>기업 단체교육 · 지역 개설 문의도 환영합니다</li>
-        ${PREP ? `<li>${NEXT_TERM} 과정 사전 안내 신청도 받습니다 — 일정이 정해지는 대로 먼저 연락드립니다</li>` : ""}
+        ${PREP ? `<li>${NEXT_TERM} 과정 사전 안내 신청도 받습니다 — 일정이 정해지는 대로 먼저 연락드립니다</li>` : ""}`}
       </ul>
     </div>
     <form class="consult-form" id="consultForm" autocomplete="off">
@@ -510,8 +612,8 @@ function consultSection(preset = {}) {
         <label><span class="cap">연락처 <b>*</b></span><div style="display:flex;gap:6px"><select name="연락처앞" style="flex:0 0 44px;appearance:none;-webkit-appearance:none;text-align:center;text-align-last:center;padding:0"><option value="010" selected>010</option><option value="011">011</option><option value="016">016</option><option value="017">017</option><option value="018">018</option><option value="019">019</option></select><input type="tel" name="연락처" required placeholder="1234-5678" style="flex:1;min-width:0"></div></label>
       </div>
       <div class="form-row two">
-        <label><span class="cap">소속 <b>*</b></span><input type="text" name="소속" required placeholder="예: OO전자 / 자영업"></label>
-        <label><span class="cap">직급</span><input type="text" name="직급" placeholder="예: 대표 / 팀장"></label>
+        <label><span class="cap">소속 <b>*</b></span><input type="text" name="소속" required placeholder="${youthPreset ? "예: 자녀 학교 · 학년 (OO중 2학년)" : "예: OO전자 / 자영업"}"></label>
+        <label><span class="cap">직급</span><input type="text" name="직급" placeholder="${youthPreset ? "예: 학부모" : "예: 대표 / 팀장"}"></label>
       </div>
       <div class="form-row two">
         <label><span class="cap">문의 과정 <b>*</b></span><select name="관심과정" required><option value="">선택해 주세요</option>${courseOpts}<option value="기타 문의">기타 문의</option></select></label>
@@ -691,6 +793,7 @@ ${why5Html()}
     <div class="course-grid">${featuredCards}</div>
     <h3 class="sec-title-sm" style="margin-top:36px">그 외 공개과정</h3>
     <div class="course-grid compact">${compactCards}</div>
+    ${youthOpenRows().map((x) => `<div data-live-until="${isoDay(schedDate(x.open))}"><p class="sec-sub lu-open" style="margin:22px 0 0"><b>${youthSeasonLabel(x)} 청소년 과정 접수 중</b> · ${REGIONS[x.region].name} ${youthDates(x)}, ${x.variant ? x.variant + " " : ""}${x.weeks}${x.hours ? ` ${x.hours}시간` : ""}. <a href="youth.html#admission">모집 안내 보기 →</a></p></div>`).join("\n    ")}
     <p style="margin-top:22px"><a class="btn btn-green" href="youth-camp.html">청소년 리더십·소통 캠프 →</a> <a href="next-term.html" style="margin-left:14px;font-weight:700;text-decoration:underline">${NEXT_TERM} 과정 사전 안내</a></p>
   </div>
 </section>
@@ -1187,17 +1290,36 @@ const DETAIL = {
     extra: "",
   },
   youth: {
-    intro: `청소년들의 잠재력과 글로벌 리더로서의 역량, 리더십 등의 인성교육은 자녀들의 가장 중요한 요소입니다.
-    청소년을 위한 데일카네기 교육은 기업과 공공기관에서도 임직원들의 자녀를 위해 적극 도입되고 있는 검증된 프로그램입니다.`,
+    // 2026-11-17 본사 안내문(카네기 청소년 리더십 과정 · 2일 총 16시간 · 8개 모듈 · 초6~고1)에 맞춰 다시 씀.
+    //   예전 3일(Yourself·Others·Us) 구성과 '초·중·고' 대상은 옛 자료다. 안내문 문장을 그대로 옮기지 않는다(모듈 이름만 같다).
+    //   학교 장면 표와 공동체역량 칸은 youth-camp.html 에 둔다(두 페이지 문장이 겹치지 않게)
+    intro: `카네기 청소년 리더십 과정은 성인 데일카네기 코스의 원칙을 초등 6학년부터 고등 1학년까지의 학교생활에 맞춰 옮긴 방학 집중 과정입니다.
+    이틀 동안 8개 모듈을 직접 말하고 발표하며 익힙니다. 기업과 공공기관이 임직원 자녀를 위해 도입해 온 프로그램이기도 합니다.`,
     goals: ["타인에 끌려가는 삶이 아닌 자신의 삶의 방향과 비전 설정", "사람을 사랑하고 이해하는 우호적 인간관계 형성", "긍정적 자아정체성 형성을 통한 자신감 증진", "걱정·스트레스를 조절하여 긍정적 에너지로 전환", "명확하고 영향력 있는 커뮤니케이션 스킬 함양", "학교와 가정에서 선한 영향력을 발휘하는 리더십 함양"],
-    targets: ["초 · 중 · 고등학생 모든 청소년"],
+    targets: ["초등 6학년부터 고등 1학년까지의 학생", "발표나 토론 시간에 아는 것을 말로 꺼내기 어려운 학생", "모둠 과제에서 역할을 나누고 의견을 맞추는 일이 부담스러운 학생", "새 학년, 새 학교에서 친구 관계를 다시 시작하는 학생", "스스로 목표를 세우고 지켜 보고 싶은 학생"],
     curriculum: [
-      ["1일차", "The Leadership in Yourself — 성공의 기초, 긍정적인 첫인상 창출, 비전설정·용기개발, 자신감 증진"],
-      ["2일차", "The Leadership in Others — 우호적 인간관계 증진, 설득력 개발, 걱정·스트레스 관리, 명확한 의사전달"],
-      ["3일차", "The Leadership in Us — 성취 인식, 협력 리더십 개발, 칭찬 파워, 혁신적 성과 및 비전 재설정"],
+      // 모듈 이름만 안내문과 같다. 설명은 안내문 '배우는 것' 칸을 옮기지 않고 새로 썼다(검토 지적 — 낱말 한두 개만 바꾼 꼴이면 안 된다).
+      //   두 번째 사이트(content-courses.js)의 모듈 설명과도 다른 문장이다
+      ["1일차 · M1", "성공의 기초 — 성공의 다섯 요소 알아보기 · 처음 만난 자리에서 나를 소개하는 연습"],
+      ["1일차 · M2", "비전 설정·용기 개발 — 앞으로의 내 모습 그려 보기 · 용기를 내 친구들 앞에서 밝히기"],
+      ["1일차 · M3", "인간관계 증진 — 사람을 대하는 카네기 원칙 · 새로 만난 친구 이름을 외우는 페깅(Pegging) 기억법"],
+      ["1일차 · M4", "성취 인식 — 지금까지 이룬 일 돌아보기 · 그 일을 말로 꺼내 자신감으로 바꾸기"],
+      ["2일차 · M5", "걱정·스트레스 극복 — 걱정이 공부와 친구 사이를 어떻게 흔드는지 알기 · 걱정을 줄이는 방법 익히기"],
+      ["2일차 · M6", "새로운 자아발견 — 틀에 갇히지 않고 나를 드러내기 · 듣는 사람이 움직이게 말하기"],
+      ["2일차 · M7", "칭찬 파워 — 친구의 좋은 점을 찾아 진심으로 말해 주기 · 칭찬으로 서로 의욕 북돋우기"],
+      ["2일차 · M8", "비전 재설정·수료식 — 배운 것 가운데 실천할 일 고르기 · 친구들 앞에서 다짐 밝히기"],
     ],
     // 2026-10-15 사장님 — 청소년 과정·리더십 소통 캠프 문의가 많아 보강. 캠프 상세는 youth-camp.html (문장이 겹치지 않게 따로 썼다)
     extra: `<section class="section alt"><div class="wrap">
+      <h2 class="sec-title">이틀을 이렇게 나눕니다</h2>
+      <div class="cycle-grid three">
+        <div><span>DAY 1 · Leader in YOURSELF</span><strong>첫날은 나 자신</strong><p>자기 자신에게 집중하는 하루입니다. 목표를 정하고, 자기소개로 처음 앞에 서 보고, 그동안 이룬 일을 말로 꺼내 봅니다. M1~M4 네 모듈입니다.</p></div>
+        <div><span>DAY 2 · Leader in OTHERS</span><strong>둘째 날은 다른 사람</strong><p>사람들 속의 나를 다루는 하루입니다. 불안을 가라앉히고, 생각을 숨기지 않고 말하고, 친구의 좋은 점을 알아봐 주는 연습이 M5~M8 네 모듈로 이어집니다.</p></div>
+        <div><span>COMPLETE</span><strong>수료</strong><p>둘째 날 마지막 모듈에서 실천할 일을 친구들 앞에서 밝히면, 미국 본사 인증 공식 수료증을 받습니다.</p></div>
+      </div>
+    </div></section>
+    ${youthAdmissionHtml()}
+    <section class="section alt"><div class="wrap">
       <h2 class="sec-title">왜 청소년 시기에 카네기인가</h2>
       <div class="cycle-grid">
         <div><span>01</span><strong>말하는 힘</strong><p>수행평가·면접·토론처럼 생각을 말로 꺼내야 하는 순간이 점점 늘어납니다. 사람들 앞에서 말하는 경험은 일찍 쌓을수록 편해집니다.</p></div>
@@ -1208,19 +1330,22 @@ const DETAIL = {
     </div></section>
     <section class="section"><div class="wrap">
       <div class="nt-box">
-        <p class="nt-kicker">문의가 많은 프로그램</p>
-        <h2 class="nt-title">방학에는 <em>리더십·소통 캠프</em>로 만나요</h2>
-        <p>청소년 데일카네기 코스는 방학 시즌에 3일 집중 캠프로 운영됩니다. 발표·경청·설득·협력을 매 시간 직접 연습하고, 마지막 날에는 자신의 비전을 친구들 앞에서 발표합니다.
-        학교·학원·기업 단위의 단체 캠프도 가능합니다. 캠프 일정과 장소는 신청 인원에 따라 정해지므로 상담 때 안내드립니다.</p>
-        <div class="nt-actions"><a class="btn btn-gold" href="#consult">캠프 상담 신청</a> <a class="nt-more" href="youth-camp.html">캠프 자세히 보기 →</a></div>
+        <p class="nt-kicker">부모님을 위한 안내</p>
+        <h2 class="nt-title">배운 것이 <em>학교 어디에서</em> 쓰일까요</h2>
+        <p>리더십·소통 캠프 안내에서 모듈마다 수행평가, 모둠 과제, 발표와 토론, 새 학년 친구 관계 가운데 어느 장면에 쓰이는지 보실 수 있습니다.
+        학교·학원·기업 단위의 단체 캠프도 열 수 있습니다. 단체 캠프의 일정과 장소는 신청 인원에 따라 정해지므로 상담 때 안내드립니다.</p>
+        <div class="nt-actions"><a class="btn btn-gold" href="#consult">상담 신청</a> <a class="nt-more" href="youth-camp.html">학교 장면으로 보기 →</a></div>
       </div>
     </div></section>
     <section class="section alt"><div class="wrap narrow">
       <h2 class="sec-title">부모님이 자주 묻는 질문</h2>
       <div class="faq-list">
-        <details class="faq-item"><summary>몇 학년부터 참여할 수 있나요?</summary><div class="faq-a"><p>초등학생부터 고등학생까지 참여할 수 있습니다. 학년과 신청 인원에 따라 반 편성이 달라지므로 상담 때 자녀 학년을 알려 주시면 맞는 일정을 안내드립니다.</p></div></details>
+        <details class="faq-item"><summary>몇 학년부터 참여할 수 있나요?</summary><div class="faq-a"><p>초등 6학년부터 고등 1학년까지 참여할 수 있습니다. 상담 때 자녀 학년을 알려 주시면 과정이 맞는지 함께 살펴 드립니다.</p></div></details>
         <details class="faq-item"><summary>말수가 적은 아이인데 적응할 수 있을까요?</summary><div class="faq-a"><p>카네기 수업은 잘한 점을 먼저 찾아 주는 칭찬 중심으로 진행됩니다. 짧은 발표부터 차근차근 시작하기 때문에 처음에 수줍어하던 학생도 금세 참여하게 됩니다.</p></div></details>
-        <details class="faq-item"><summary>교육비와 일정은 어떻게 알 수 있나요?</summary><div class="faq-a"><p>청소년 과정은 지역과 모집 상황에 따라 일정·장소·교육비가 정해집니다. 상담 신청을 남겨 주시면 개별로 안내드립니다.</p></div></details>
+        <details class="faq-item"><summary>교육비와 일정은 어떻게 알 수 있나요?</summary><div class="faq-a"><p>${youthOpenRows().length
+          ? `${youthOpenRows().map((x) => `${youthSeasonLabel(x)} 과정은 ${REGIONS[x.region].name}에서 ${youthDatesLong(x)} ${daysWord(x)} 동안 열리며${x.fee != null ? ` 수강료는 ${feeMan(x.fee)}입니다` : " 수강료는 상담 때 안내드립니다"}.`).join(" ")} 시간과 장소, 정원은 이 페이지의 모집 안내에 있습니다. 다른 지역이나 단체 과정은 모집 상황에 따라 일정·장소·교육비가 정해져, 상담 신청을 남겨 주시면 개별로 안내드립니다.`
+          : `청소년 과정은 지역과 모집 상황에 따라 일정·장소·교육비가 정해집니다. 상담 신청을 남겨 주시면 개별로 안내드립니다.`}</p></div></details>
+        <details class="faq-item"><summary>수료증이 나오나요?</summary><div class="faq-a"><p>나옵니다. 둘째 날 마지막 모듈의 비전 발표까지 마치면 데일카네기 미국 본사 인증 공식 수료증을 받습니다.</p></div></details>
       </div>
     </div></section>`,
   },
@@ -1320,8 +1445,14 @@ ${consultSection({ course: key })}`;
 
   return page({
     file: `${c.slug}.html`,
-    title: `${c.name} | ${c.tag}`,
-    desc: `${c.short} — ${c.duration}. ${YEAR_LABEL} 개강 일정과 커리큘럼, 참가 대상 안내.`,
+    // 청소년 과정은 이름이 길어 tag 를 붙이면 40자를 넘는다(42자) — 대상·기간으로 짧게 (2026-11-17 검토)
+    title: key === "youth" ? `${c.name} | 초6~고1 방학 2일 16시간` : `${c.name} | ${c.tag}`,
+    // 청소년 과정 설명문은 따로 쓴다 — 검색어를 앞에, 사실을 명사로 끊어서(2026-10-02 규칙). 캠프 페이지(youth-camp.html) 설명문과 겹치지 않게 커리큘럼 쪽 사실을 적는다
+    desc: key === "youth"
+      ? (youthOpenRows().length
+        ? `${c.name}, 초6~고1 방학 2일 16시간 8개 모듈, ${youthOpenRows().map((x) => `${youthSeasonLabel(x)} ${REGIONS[x.region].name} ${x.open} 개강`).join("·")}, 커리큘럼과 모집 안내, 상담 신청.`
+        : `${c.name}, 초6~고1 방학 2일 16시간 8개 모듈, 커리큘럼과 참가 대상, 일정은 상담 시 안내.`)
+      : `${c.short} — ${c.duration}. ${YEAR_LABEL} 개강 일정과 커리큘럼, 참가 대상 안내.`,
     hero,
     body,
     jsonld: (() => {
@@ -1331,6 +1462,7 @@ ${consultSection({ course: key })}`;
         name: c.name,
         description: c.short,
         provider: { "@type": "Organization", name: "데일카네기코리아", telephone: BRANCH.hq.tel },
+        ...(key === "youth" && youthOpenRows().length ? { hasCourseInstance: youthOpenRows().map(youthInstanceLd) } : {}),
       };
       return key === "ceo" || key === "dcc" ? [courseLd, faqJsonld(key)] : courseLd;
     })(),
@@ -1758,8 +1890,9 @@ function buildCombo(regionSlug, courseKey) {
     <h2 class="sec-title">${r.name} 개강 일정</h2>
     <p class="sec-sub">${r.name} 지역의 ${c.name} 개강 일정은 준비 중입니다. 아래 전국 일정을 참고하시거나,
     하단 상담 신청을 남겨 주시면 ${r.name} 인근 개설 소식과 참여 가능한 가까운 일정을 안내드립니다.
-    기업·단체 대상 지역 맞춤 개설 문의도 가능합니다.${PREP ? ` ${NEXT_TERM} 과정은 <a href="next-term.html">사전 안내 신청</a>을 받고 있습니다.` : ""}</p>
+    기업·단체 대상 지역 맞춤 개설 문의도 가능합니다.${PREP && courseKey !== "youth" ? ` ${NEXT_TERM} 과정은 <a href="next-term.html">사전 안내 신청</a>을 받고 있습니다.` : ""}</p>
     ${allRows.length ? scheduleTable(allRows, { label: `${c.name} 전국 개강 일정표` }) : ""}
+    ${courseKey === "youth" && youthOpenRows().length ? `<p class="sec-sub" style="margin-top:14px">수업 시간과 정원, 식사, 수료증 같은 모집 요강은 <a href="youth.html#admission">${c.name} 모집 안내</a>에서 보실 수 있습니다.</p>` : ""}
   </div>
 </section>`;
 
@@ -1774,7 +1907,7 @@ function buildCombo(regionSlug, courseKey) {
   const body = `
 <section class="section">
   <div class="wrap narrow">
-    <p class="lead">${r.name}에서 ${c.name}를 찾고 계신가요? ${d.intro}</p>
+    <p class="lead">${r.name}에서 ${josa(c.name, "을", "를")} 찾고 계신가요? ${d.intro}</p>
     <div class="fact-row">
       <div><span>기간</span><strong>${c.duration}</strong></div>
       <div><span>대상</span><strong>${c.target}</strong></div>
@@ -1783,6 +1916,7 @@ function buildCombo(regionSlug, courseKey) {
 </section>
 
 ${scheduleBlock}
+${courseKey === "youth" ? youthAdmissionHtml({ region: regionSlug }) : ""}
 
 <section class="section">
   <div class="wrap two-col">
@@ -1824,9 +1958,18 @@ ${consultSection({ course: courseKey, region: regionSlug })}`;
 
   return page({
     file: comboFile(regionSlug, courseKey),
-    title: `${r.name} ${c.name} | ${r.name} ${COMBO_KW[courseKey]}`,
+    // 청소년 과정은 이름이 길어 지역 이름을 두 번 쓰면 40자를 넘는다 — 뒤쪽은 지역 없이 (2026-11-17 검토)
+    title: courseKey === "youth" ? `${r.name} ${c.name} | 청소년 리더십 캠프` : `${r.name} ${c.name} | ${r.name} ${COMBO_KW[courseKey]}`,
     // 과정 소개 문구(c.short)는 길어서 검색 결과에서 잘렸다 — 기간과 볼 수 있는 것만 짧게 (2026-10-02)
-    desc: `${r.name} ${c.name}, ${c.duration}. ${localRows.length ? `${YEAR_LABEL} ${r.name} 개강 일정과 수강료,` : `${r.name} 개설 일정과`} 커리큘럼, 온라인 상담 신청.`,
+    // 청소년 과정은 따로 쓴다 — '과정, 2일 집중 과정' 되풀이·괄호 나열·'2026 하반기'(겨울방학 과정인데) 를 피하고,
+    //   그 지역에 접수 중인 기수가 있으면 날짜·수강료를, 다른 지역에만 있으면 그 지역 일정을 적는다(개강 뒤 재빌드에서 빠진다)
+    desc: courseKey === "youth"
+      ? (() => {
+        const mine = youthOpenRows().filter((x) => x.region === regionSlug), other = youthOpenRows().filter((x) => x.region !== regionSlug);
+        if (mine.length) return `${r.name} ${c.name}, 초6~고1 ${youthSeason(mine[0])} ${mine[0].open}~${mine[0].close} 2일 16시간${mine[0].fee != null ? `, 수강료 ${feeMan(mine[0].fee)}` : ""}, 커리큘럼과 상담 신청.`;
+        return `${r.name} ${c.name}, 초6~고1 방학 2일 16시간, ${r.name} 개설 문의${other.length ? `와 ${REGIONS[other[0].region].name} ${other[0].open} 일정` : ""}, 커리큘럼, 상담 신청.`;
+      })()
+      : `${r.name} ${c.name}, ${c.duration}. ${localRows.length ? `${YEAR_LABEL} ${r.name} 개강 일정과 수강료,` : `${r.name} 개설 일정과`} 커리큘럼, 온라인 상담 신청.`,
     hero,
     body,
     jsonld: {
@@ -1934,6 +2077,9 @@ a{color:inherit;text-decoration:none}
 .sec-sub{color:var(--muted);margin-bottom:28px;max-width:720px}
 .sec-sub a{color:var(--green);font-weight:700;text-decoration:underline}
 .lead{font-size:17px;color:#33403a;margin-bottom:28px}
+.lead a{color:var(--green);font-weight:700;text-decoration:underline}
+/* 청소년 모집 안내 — 접속 시점에 개강일이 지나면 스크립트가 .lu-open 을 숨기고 .lu-past 를 연다 (2026-11-17) */
+.lu-open[hidden],.lu-past[hidden]{display:none}
 
 /* breadcrumbs · 업데이트 표기 */
 .crumbs{font-size:13px;color:var(--muted);padding:14px 0 0}
@@ -2671,28 +2817,58 @@ ${consultSection({ course: "next-term" })}`;
 
 // ------------------------------------------------------------
 // 청소년 리더십·소통 캠프 youth-camp.html (2026-10-15 사장님 — 청소년 과정·리더십·소통 캠프 문의가 많다)
-//   청소년 데일카네기 코스(3일 집중, 방학)를 캠프로 안내하는 페이지.
-//   ⚠ 캠프 날짜·장소·참가비는 모집 상황에 따라 정해진다 — 지어내지 말고 "상담 시 안내"로 쓸 것
+//   카네기 청소년 리더십 과정(방학 2일 집중)을 부모님 눈높이로 안내하는 페이지 — 학교 장면 표·공동체역량 칸은 이 페이지에만 있다.
+//   2026-11-17 본사 안내문(2026 겨울방학: 서울 12.28~12.29, 초6~고1, 2일 총 16시간, 77만 원)에 맞춰 다시 씀. 3일 흐름·'초·중·고'는 옛 자료.
+//   ⚠ 공개 과정의 날짜·장소·수강료는 data.js SCHEDULE 의 youth 줄(안내문 값)만 쓴다. 단체 캠프와 다른 지역 일정은 지어내지 말고 "상담 시 안내"로 쓸 것
+//   ⚠ 안내문 문장을 그대로 옮기지 않는다(모듈 이름·학교 장면 낱말만 같다) — 본사·지사가 다른 채널에 그대로 쓰는 자료다
 // ------------------------------------------------------------
-const YOUTH_CAMP_FAQ = [
-  ["내성적이고 발표를 무서워하는 아이도 괜찮을까요?", "오히려 그런 친구들을 위한 캠프입니다. 처음에는 자기소개처럼 짧고 쉬운 발표부터 시작하고, 발표가 끝날 때마다 잘한 점을 먼저 찾아 칭찬하는 방식으로 진행합니다. 작은 성공을 여러 번 겪으면서 ‘말해도 괜찮구나’를 몸으로 익히게 됩니다."],
-  ["초등학생과 고등학생이 같이 수업을 듣나요?", "참가 학생의 학년과 인원에 따라 반 편성이 달라집니다. 같은 원칙이라도 학년에 맞는 예시와 활동으로 다루며, 구체적인 편성은 상담 때 함께 안내드립니다."],
-  ["캠프 일정·장소·참가비는 어떻게 되나요?", "캠프 일정과 장소, 참가비는 지역별 모집 인원과 신청 상황에 따라 정해지고 바뀌는 경우가 많아 상담 때 안내드립니다. 상담 신청에서 ‘청소년 리더십·소통 캠프’를 고르고 자녀 학년과 희망 지역을 남겨 주세요."],
-  ["학교·학원·회사 단위로 캠프를 열 수 있나요?", "가능합니다. 청소년 데일카네기 교육은 기업과 공공기관이 임직원 자녀를 위해 도입해 온 프로그램이며, 학교·단체 일정에 맞춘 단체 캠프도 상담으로 설계합니다."],
-  ["성인 데일카네기 과정과 무엇이 같고 무엇이 다른가요?", "자신감·인간관계·커뮤니케이션·리더십이라는 원칙은 성인 과정과 같습니다. 다만 학교생활·친구 관계·가족·진로처럼 청소년의 일상에서 바로 써먹을 수 있는 장면으로 바꾸어 다룹니다."],
+// 모듈마다 학교의 어느 장면에서 쓰이는지 (안내문 3면 '학교에서는' 칸)
+const YOUTH_SCHOOL = [
+  ["1일차", "M1 성공의 기초", "새 학년 목표를 세울 때"],
+  ["1일차", "M2 비전 설정·용기 개발", "진로 활동을 하고 진로 발표를 준비할 때"],
+  ["1일차", "M3 인간관계 증진", "새 반에서 친구를 사귈 때"],
+  ["1일차", "M4 성취 인식", "수행평가를 돌아보고 내 강점을 말할 때"],
+  ["2일차", "M5 걱정·스트레스 극복", "시험과 발표를 앞두고 불안할 때"],
+  ["2일차", "M6 새로운 자아발견", "토론에서 내 의견을 말할 때"],
+  ["2일차", "M7 칭찬 파워", "빠지는 사람 없이 모두가 참여하는 모둠을 만들 때"],
+  ["2일차", "M8 비전 재설정·수료식", "다짐을 발표하고 실천 습관으로 이어 갈 때"],
 ];
+// 학생부종합전형 공동체역량 4개 항목과 이어지는 모듈 (안내문 3면 — 출처와 '학생부는 교사가 학교 안에서 관찰해 작성' 단서를 반드시 함께 싣는다)
+const YOUTH_COMMUNITY = [
+  //   항목 이름 넷과 모듈 짝은 안내문 그대로, 설명은 새로 쓴 문장이다(안내문 설명을 옮기지 않는다)
+  ["협업과 소통능력", "M3 · M6", "서로 다른 생각을 꺼내 놓고 하나의 결과물로 모아 가는 힘"],
+  ["나눔과 배려", "M3 · M7", "내 말보다 상대 사정을 먼저 살피고 잘한 점을 알아봐 주는 힘"],
+  ["성실성과 규칙준수", "M1 · M5", "정한 목표를 끝까지 가져가고, 걱정이 생겨도 제자리로 돌아오는 힘"],
+  ["리더십", "M7 · M8", "친구의 좋은 점을 말해 주고 함께 갈 방향을 보여 주는 힘"],
+];
+function youthCampFaq() {
+  const open = youthOpenRows();
+  return [
+    ["내성적이고 발표를 무서워하는 아이도 괜찮을까요?", "오히려 그런 친구들을 위한 과정입니다. 처음에는 자기소개처럼 짧고 쉬운 발표부터 시작하고, 발표가 끝날 때마다 잘한 점을 먼저 찾아 칭찬하는 방식으로 진행합니다. 작은 성공을 여러 번 겪으면서 ‘말해도 괜찮구나’를 몸으로 익히게 됩니다."],
+    ["몇 학년이 함께 수업을 듣나요?", open.some((x) => x.quota)
+      ? `초등 6학년부터 고등 1학년까지가 대상이고, ${open.filter((x) => x.quota).map((x) => `${youthSeasonLabel(x)} 과정의 반 정원은 ${x.quota}명`).join(", ")}입니다. 반 편성은 신청 인원에 따라 정해지므로 상담 때 자녀 학년을 알려 주시면 함께 안내드립니다.`
+      : "초등 6학년부터 고등 1학년까지가 대상입니다. 반 편성은 신청 인원에 따라 정해지므로 상담 때 자녀 학년을 알려 주시면 함께 안내드립니다."],
+    ["일정·장소·수강료는 어떻게 되나요?", open.length
+      ? `${open.map((x) => `${youthSeasonLabel(x)} 과정은 ${youthDatesLong(x)} ${daysWord(x)}${x.time ? `, 매일 ${x.time}에` : ""} ${REGIONS[x.region].name} ${REGIONS[x.region].venue.replace(/\s*\(.*$/, "")}에서 열립니다.${x.fee != null ? ` 수강료는 ${feeMan(x.fee)}입니다.` : ""}${x.meal ? ` 점심은 ${daysWord(x)} 모두 제공됩니다.` : ""}${x.quota ? ` 반 정원 ${x.quota}명이 차면 접수를 마감합니다.` : ""}`).join(" ")} 그 밖의 지역과 단체 캠프는 신청 인원에 따라 일정과 장소가 정해져 상담 때 안내드립니다.`
+      : "방학 공개 과정의 일정과 장소, 수강료는 모집이 시작될 때 정해집니다. 지금은 접수 중인 과정이 없어, 상담 신청에서 ‘청소년 리더십·소통 캠프’를 고르고 자녀 학년과 희망 지역을 남겨 주시면 일정이 나오는 대로 안내드립니다."],
+    ["수료증이 나오나요?", "네. 이틀을 모두 참여하고 마지막 시간의 비전 발표를 마친 학생은 미국 본사가 인증한 데일카네기 공식 수료증을 받습니다."],
+    ["학교·학원·회사 단위로 캠프를 열 수 있나요?", "가능합니다. 청소년 데일카네기 교육은 기업과 공공기관이 임직원 자녀를 위해 도입해 온 프로그램이며, 학교·단체 일정에 맞춘 단체 캠프도 상담으로 설계합니다."],
+    ["성인 데일카네기 과정과 무엇이 같고 무엇이 다른가요?", "자신감·인간관계·커뮤니케이션·리더십이라는 원칙은 성인 과정과 같습니다. 다만 학교생활·친구 관계·가족·진로처럼 청소년의 일상에서 바로 써먹을 수 있는 장면으로 바꾸어 다룹니다."],
+  ];
+}
 
 function buildYouthCamp() {
   const c = COURSES.youth;
   const d = DETAIL.youth;
-  // 2026-11-02 본사 사전 안내(서울 12.28~29, 초6~고1) — 접수 중인 청소년 기수가 있으면 날짜를 보여 준다
-  const youthOpen = SCHEDULE.filter((x) => x.course === "youth" && isActive(x));
+  // 접수 중인 청소년 기수(2026-11-17 안내문: 서울 12.28~12.29) — 있으면 날짜·수강료를 보여 주고, 개강 뒤 빌드에서는 '상담 시 안내'로 돌아간다
+  const youthOpen = youthOpenRows();
+  const YOUTH_CAMP_FAQ = youthCampFaq();
   const hero = `<section class="hero hero-course">
   <div class="wrap hero-inner">
     <p class="hero-kicker">YOUTH CAMP · ${esc(c.eng)}</p>
     <h1>청소년 리더십·소통 캠프</h1>
-    <p class="hero-sub">자신감 · 소통 · 리더십 — 3일 동안 직접 말하고, 듣고, 이끌어 보는 방학 집중 캠프</p>
-    <div class="hero-actions"><a class="btn btn-gold" href="#consult">캠프 상담 신청</a><a class="btn btn-line" href="youth.html">청소년 코스 소개</a></div>
+    <p class="hero-sub">자신감 · 소통 · 리더십. 이틀 동안 직접 말하고, 듣고, 이끌어 보는 ${esc(c.name)}</p>
+    <div class="hero-actions"><a class="btn btn-gold" href="#consult">캠프 상담 신청</a><a class="btn btn-line" href="youth.html">과정 소개 · 8개 모듈</a></div>
   </div>
 </section>`;
 
@@ -2700,14 +2876,16 @@ function buildYouthCamp() {
 <section class="section">
   <div class="wrap narrow">
     <p class="lead">요즘 부모님들의 문의는 비슷합니다. “아는 건 많은데 사람들 앞에서는 말을 못 해요.” “친구 관계 때문에 자주 힘들어해요.” “반장이 됐는데 어떻게 이끌어야 할지 몰라요.”
-    청소년 리더십·소통 캠프는 110년 넘게 검증된 데일카네기 원칙으로, 이런 고민을 <b>설명이 아니라 연습</b>으로 풀어 가는 방학 집중 프로그램입니다.</p>
+    청소년 리더십·소통 캠프는 1912년부터 이어 온 데일카네기 원칙으로, 이런 고민을 <b>설명이 아니라 연습</b>으로 풀어 가는 방학 집중 과정입니다. 정식 이름은 ${esc(c.name)}입니다.</p>
     <div class="fact-row">
-      <div><span>기간</span><strong>3일 집중 캠프 (방학 시즌)</strong></div>
-      <div><span>대상</span><strong>초 · 중 · 고등학생</strong></div>
+      <div><span>기간</span><strong>${c.duration}</strong></div>
+      <div><span>대상</span><strong>${c.target}</strong></div>
     </div>
-    ${youthOpen.length ? `<p class="lead" style="margin-top:18px"><b>다가오는 일정</b> — ${youthOpen.map((x) => `${REGIONS[x.region].name} ${x.open}(${x.day.split("·")[0]})~${x.close}(${x.day.split("·").pop()}) ${x.weeks}${x.variant ? ", " + x.variant.replace(/ 대상$/, "") + " 대상" : ""}`).join(" · ")}.</p>` : ""}
+    ${youthOpen.map((x) => `<div data-live-until="${isoDay(schedDate(x.open))}"><p class="lead lu-open" style="margin-top:18px"><b>다가오는 일정</b> ${REGIONS[x.region].name} ${youthDates(x)} ${x.weeks}${x.fee != null ? `, 수강료 ${feeMan(x.fee)}` : ""}. <a href="#admission">모집 안내 보기 →</a></p></div>`).join("\n    ")}
   </div>
 </section>
+
+${youthAdmissionHtml()}
 
 <section class="section alt">
   <div class="wrap">
@@ -2725,25 +2903,25 @@ function buildYouthCamp() {
   <div class="wrap">
     <h2 class="sec-title">캠프의 세 가지 축</h2>
     <div class="cycle-grid three">
-      <div><span>01 · LEADERSHIP</span><strong>리더십</strong><p>남에게 끌려가지 않고 스스로 비전을 세우는 것에서 시작해, 친구들의 협력을 이끌어 내는 협력 리더십까지 경험합니다.</p></div>
-      <div><span>02 · COMMUNICATION</span><strong>소통 · 커뮤니케이션</strong><p>상대의 말을 끝까지 듣는 경청, 내 생각을 명확하게 전하는 법, 상대를 설득하는 법을 짝·조 활동으로 연습합니다.</p></div>
-      <div><span>03 · CONFIDENCE</span><strong>자신감 · 발표</strong><p>매 시간 모두가 앞에 나와 말합니다. 짧은 발표에서 시작해 마지막 날에는 자신의 비전을 당당하게 발표합니다.</p></div>
+      <div><span>01 · LEADERSHIP</span><strong>리더십</strong><p>남에게 끌려가지 않고 스스로 비전을 세우는 것에서 시작해, 칭찬으로 친구들의 마음을 움직이는 데까지 나아갑니다.</p></div>
+      <div><span>02 · COMMUNICATION</span><strong>소통 · 커뮤니케이션</strong><p>상대의 말을 끝까지 듣는 경청, 내 생각을 숨기지 않고 분명하게 전하는 법을 친구들과 함께 연습합니다.</p></div>
+      <div><span>03 · CONFIDENCE</span><strong>자신감 · 발표</strong><p>이틀 동안 여러 번 앞에 나와 말합니다. 짧은 자기소개에서 시작해 마지막 모듈에서는 자신의 비전을 발표합니다.</p></div>
     </div>
   </div>
 </section>
 
 <section class="section alt">
   <div class="wrap">
-    <h2 class="sec-title">3일 캠프 흐름</h2>
-    <p class="sec-sub">나 → 다른 사람 → 우리의 순서로, 하루하루 쌓아 가도록 구성되어 있습니다.</p>
-    <div class="table-wrap" tabindex="0" role="region" aria-label="청소년 리더십·소통 캠프 3일 흐름 표"><table class="curri">
-      <thead><tr><th>구분</th><th>주제</th><th>이렇게 연습합니다</th></tr></thead>
+    <h2 class="sec-title">이틀 동안 배우는 것, 학교에서 쓰이는 곳</h2>
+    <p class="sec-sub">첫날은 나 자신을, 둘째 날은 다른 사람과의 관계를 다룹니다. 여덟 모듈은 저마다 학교생활의 한 장면과 이어집니다.</p>
+    <p class="table-hint">← 옆으로 밀면 학교 장면 칸이 이어집니다</p>
+    <div class="table-wrap" tabindex="0" role="region" aria-label="청소년 리더십·소통 캠프 모듈과 학교 장면 표"><table class="curri">
+      <thead><tr><th>구분</th><th>모듈</th><th>학교에서는</th></tr></thead>
       <tbody>
-        <tr><td class="td-week">1일차</td><td>The Leadership in Yourself<br>나를 이끄는 힘</td><td>성공의 기초 · 긍정적인 첫인상 만들기 · 비전 설정과 용기 개발 · 자신감 증진 — 자기소개와 짧은 발표로 ‘말해도 괜찮다’는 경험을 쌓습니다.</td></tr>
-        <tr><td class="td-week">2일차</td><td>The Leadership in Others<br>친구와 통하는 힘</td><td>우호적 인간관계 · 설득력 개발 · 걱정·스트레스 관리 · 명확한 의사전달 — 짝 인터뷰·경청 활동으로 상대를 이해하고 내 생각을 분명하게 전합니다.</td></tr>
-        <tr><td class="td-week">3일차</td><td>The Leadership in Us<br>함께 해내는 힘</td><td>성취 인식 · 협력 리더십 · 칭찬의 힘 · 비전 재설정 — 조별 과제로 협력을 경험하고, 마지막에 나의 비전을 친구들 앞에서 발표합니다.</td></tr>
+        ${YOUTH_SCHOOL.map(([day, m, where]) => `<tr><td class="td-week">${day}</td><td>${m}</td><td>${where}</td></tr>`).join("\n        ")}
       </tbody>
     </table></div>
+    <p class="sec-sub" style="margin-top:14px">모듈마다 무엇을 배우는지는 <a href="youth.html">${esc(c.name)} 소개</a>의 커리큘럼에 있습니다.</p>
   </div>
 </section>
 
@@ -2767,36 +2945,47 @@ function buildYouthCamp() {
 
 <section class="section alt">
   <div class="wrap">
-    <h2 class="sec-title">학년마다 와닿는 지점이 다릅니다</h2>
-    <div class="cycle-grid three">
-      <div><span>초등 고학년</span><strong>표현하는 즐거움</strong><p>친구들 앞에서 말하는 경험을 놀이처럼 즐기고, 칭찬과 인사 같은 관계의 기본을 몸에 익힙니다.</p></div>
-      <div><span>중학생</span><strong>관계와 자기 이해</strong><p>친구 관계와 감정이 복잡해지는 시기, 경청과 감정 조절, 긍정적인 자아상을 다지는 데 힘을 줍니다.</p></div>
-      <div><span>고등학생</span><strong>비전과 리더십</strong><p>진로 목표를 스스로 정리하고, 면접·발표·학생회 활동에 필요한 설득력과 리더십을 키웁니다.</p></div>
+    <h2 class="sec-title">입시에서 말하는 공동체역량과 맞닿아 있습니다</h2>
+    <p class="sec-sub">다섯 대학이 함께 연구해 내놓은 학생부종합전형 공통 평가 요소(2022)에서 공동체역량은 네 항목으로 나뉩니다. 이 과정의 모듈은 그 네 항목과 같은 방향의 힘을 기릅니다.</p>
+    <div class="cycle-grid">
+      ${YOUTH_COMMUNITY.map(([t, m, p]) => `<div><span>${m}</span><strong>${t}</strong><p>${p}</p></div>`).join("\n      ")}
     </div>
+    <p class="table-note">공동체역량 네 항목은 건국대·경희대·연세대·중앙대·한국외대 공동연구 「학생부종합전형 공통 평가요소 및 평가항목」(2022)에 따른 것입니다. 학생부는 선생님이 학교 안에서 직접 관찰한 내용으로 작성하므로, 과정에서 익힌 것을 학교생활에서 써 보는 일이 중요합니다.</p>
   </div>
 </section>
 
 <section class="section">
   <div class="wrap">
+    <h2 class="sec-title">학년마다 와닿는 지점이 다릅니다</h2>
+    <div class="cycle-grid three">
+      <div><span>초등 6학년</span><strong>표현하는 즐거움</strong><p>친구들 앞에서 말하는 경험을 놀이처럼 즐기고, 칭찬과 인사 같은 관계의 기본을 몸에 익힙니다.</p></div>
+      <div><span>중학생</span><strong>관계와 자기 이해</strong><p>친구 관계와 감정이 복잡해지는 시기, 경청과 감정 조절, 긍정적인 자아상을 다지는 데 힘을 줍니다.</p></div>
+      <div><span>고등 1학년</span><strong>비전과 리더십</strong><p>진로 목표를 스스로 정리하고, 발표와 토론, 학생회 활동에 필요한 설득력과 리더십을 키웁니다.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section alt">
+  <div class="wrap">
     <h2 class="sec-title">이런 형태로 운영합니다</h2>
     <div class="perk-grid">
-      <div><span>01</span><strong>방학 공개 캠프</strong><p>방학 기간에 개인 신청으로 참여하는 3일 집중 캠프입니다. 지역별 개설 여부와 일정은 모집 상황에 따라 정해지므로 상담 때 안내드립니다.</p></div>
+      <div><span>01</span><strong>방학 공개 과정</strong><p>방학에 개인 신청으로 참여하는 2일 집중 과정입니다. ${youthOpen.length ? `${youthOpen.map((x) => `${youthSeasonLabel(x)}에는 ${REGIONS[x.region].name}에서 ${youthDates(x)}에 열립니다`).join(", ")}.` : "다음 방학 과정은 일정이 정해지는 대로 상담으로 안내드립니다."}</p></div>
       <div><span>02</span><strong>기업·공공기관 임직원 자녀 캠프</strong><p>기업과 공공기관이 임직원 복지로 도입해 온 형태입니다. 기관 일정과 인원에 맞춰 개설합니다.</p></div>
       <div><span>03</span><strong>학교·학원·단체 맞춤 캠프</strong><p>학생회·동아리·학급 단위로 리더십·소통 캠프를 열 수 있습니다. 대상 학년과 목표에 맞춰 상담으로 설계합니다.</p></div>
-      <div><span>04</span><strong>상담으로 일정 안내</strong><p>캠프는 신청 인원에 따라 일정·장소가 달라지는 경우가 많습니다. 자녀 학년과 희망 지역을 남겨 주시면 맞는 일정을 상담으로 안내드립니다.</p></div>
+      <div><span>04</span><strong>다른 지역은 상담으로</strong><p>공개 과정이 열리지 않는 지역과 단체 캠프는 신청 인원에 따라 일정·장소가 정해집니다. 자녀 학년과 희망 지역을 남겨 주시면 상담으로 안내드립니다.</p></div>
     </div>
     <p style="margin-top:22px"><a class="btn btn-green" href="#consult">캠프 상담 신청 →</a></p>
   </div>
 </section>
 
-<section class="section alt" id="faq">
+<section class="section" id="faq">
   <div class="wrap narrow">
     <h2 class="sec-title">학부모님이 자주 묻는 질문</h2>
     ${faqListHtml(YOUTH_CAMP_FAQ)}
   </div>
 </section>
 
-<section class="section">
+<section class="section alt">
   <div class="wrap">
     <h2 class="sec-title-sm">지역별 청소년 과정 안내</h2>
     <div class="chip-grid">
@@ -2809,8 +2998,11 @@ ${consultSection({ course: "youth-camp" })}`;
 
   return page({
     file: "youth-camp.html",
-    title: "청소년 리더십·소통 캠프 | 데일카네기 방학 3일 집중 캠프",
-    desc: "발표가 두려운 아이, 친구 관계가 어려운 아이를 위한 데일카네기 청소년 리더십·소통 캠프. 초·중·고 대상 방학 3일 집중 과정 — 일정은 상담 시 안내.",
+    title: `청소년 리더십·소통 캠프 | ${c.name} 방학 2일`,
+    // 설명문은 검색어를 앞에, 사실을 명사로 끊어서 (2026-10-02 규칙). 접수 중인 기수가 있으면 날짜·수강료를 적는다 — 개강 뒤 재빌드에서 빠진다
+    desc: youthOpen.length
+      ? `청소년 리더십·소통 캠프, 발표·모둠 과제·친구 관계 연습, ${youthOpen.map((x) => `${youthSeason(x)} ${x.open}~${x.close} ${REGIONS[x.region].name}`).join("·")}, 초6~고1${youthOpen[0].fee != null ? `, 수강료 ${feeMan(youthOpen[0].fee)}` : ""}, 상담 신청.`
+      : "청소년 리더십·소통 캠프, 발표·모둠 과제·친구 관계 연습, 초6~고1 방학 2일 과정, 수료증 발급, 일정은 상담 시 안내.",
     hero,
     body,
     crumbs: [{ label: "홈", href: "index.html" }, { label: "과정 안내", href: "index.html#courses" }, { label: c.name, href: "youth.html" }, { label: "리더십·소통 캠프" }],
@@ -2818,7 +3010,7 @@ ${consultSection({ course: "youth-camp" })}`;
       "@context": "https://schema.org",
       "@type": "Course",
       name: "청소년 리더십·소통 캠프",
-      description: "자신감·소통·리더십을 3일 동안 직접 연습하는 데일카네기 청소년 방학 집중 캠프",
+      description: "자신감·소통·리더십을 이틀 동안 직접 연습하는 데일카네기 청소년 방학 집중 과정",
       provider: { "@type": "Organization", name: "데일카네기코리아", telephone: BRANCH.hq.tel },
     }, plainFaq(YOUTH_CAMP_FAQ)],
   });
@@ -2878,7 +3070,9 @@ const RSS_ITEMS = [
     desc: g.desc,
   })),
   { title: `${NEXT_TERM} 데일카네기 과정 사전 안내`, link: `${BASE_URL}/next-term.html`, date: "Thu, 15 Oct 2026 09:00:00 +0900", desc: `올해 개강이 지난 과정은 ${NEXT_TERM}에 다음 기수가 예정되어 있습니다. 일정은 모집 상황에 따라 상담 시 안내드립니다.` },
-  { title: "청소년 리더십·소통 캠프 안내", link: `${BASE_URL}/youth-camp.html`, date: "Thu, 15 Oct 2026 09:00:00 +0900", desc: "자신감·소통·리더십을 3일 동안 직접 연습하는 데일카네기 청소년 방학 집중 캠프." },
+  { title: "청소년 리더십·소통 캠프 안내", link: `${BASE_URL}/youth-camp.html`, date: "Thu, 15 Oct 2026 09:00:00 +0900", desc: "자신감·소통·리더십을 이틀 동안 직접 연습하는 데일카네기 청소년 방학 집중 과정." },
+  // 2026-11-17 본사 안내문 반영 소식 — 날짜가 붙은 공지라 개강 뒤에도 그대로 둔다(다음 방학 과정은 새 항목으로)
+  { title: "2026 겨울방학 카네기 청소년 리더십 과정 모집 안내 (서울 12.28~12.29)", link: `${BASE_URL}/youth.html`, date: "Tue, 17 Nov 2026 09:00:00 +0900", desc: "초6~고1 대상 2일 16시간 집중 과정. 12.28(월)~12.29(화) 서울 데일카네기코리아 본원, 수강료 77만 원, 2일 모두 중식 제공, 미국 본사 인증 공식 수료증." },
   { title: "[기업교육] 기업 맞춤 교육 안내 — 진단에서 시작하는 사내교육", link: `${BASE_URL}/corporate.html`, date: "Sat, 05 Sep 2026 09:00:00 +0900", desc: "팀장 교육, 성과관리·코칭·피드백, 협업·소통, 조직문화·변화관리, 세일즈까지 150여 개 모듈로 회사마다 다르게 설계하는 데일카네기 기업교육." },
   ...TOPICS.map((t) => ({
     title: `[기업교육] ${t.h1 || t.keyword}`,

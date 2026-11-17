@@ -90,6 +90,9 @@ a{color:inherit;text-decoration:none}
 .sec-sub{color:var(--muted);margin-bottom:28px;max-width:720px}
 .sec-sub a{color:var(--green);font-weight:700;text-decoration:underline}
 .lead{font-size:17px;color:#33403a;margin-bottom:28px}
+.lead a{color:var(--green);font-weight:700;text-decoration:underline}
+/* 청소년 모집 안내 — 접속 시점에 개강일이 지나면 스크립트가 .lu-open 을 숨기고 .lu-past 를 연다 (2026-11-17) */
+.lu-open[hidden],.lu-past[hidden]{display:none}
 
 /* breadcrumbs · 업데이트 표기 */
 .crumbs{font-size:13px;color:var(--muted);padding:14px 0 0}

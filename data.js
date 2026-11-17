@@ -64,9 +64,16 @@ const SCHEDULE = [
   // 서울 DYLP 18: 11.12(목)~11.13(금) 이틀 교육으로 확정 (2026-09-21 사용자 확인 — 본사 목록의 개강 11.19는 오기)
   { name: "서울 DYLP",           course: "dylp",  region: "seoul",         gi: "18",  open: "11.12", close: "11.13", day: "목·금", weeks: "2일",  fee: 800000 },
   { name: "대전 CEO",            course: "ceo",   region: "daejeon",       gi: "53",  open: "11.17", close: "02.02", day: "화",   weeks: "12주", fee: 2900000 },
-  // 2026-11-02 본사 '공지 전 사전 안내'(사장님 전달) — 수강료는 아직 안내받지 못해 비워 둔다(화면 '미정'). 금액을 지어 넣지 말 것.
+  // 2026-11-02 본사 '공지 전 사전 안내'(사장님 전달) — 서울 CEO 104기 수강료는 아직 안내받지 못해 비워 둔다(화면 '상담 시 안내'). 금액을 지어 넣지 말 것.
   //   서울 청소년 과정은 기수 번호 없이 12.28(월)~12.29(화) 이틀, 초6~고1 대상
-  { name: "서울 청소년",          course: "youth", region: "seoul",         gi: "",    open: "12.28", close: "12.29", day: "월·화", weeks: "2일",  fee: null, variant: "초6~고1 대상" },
+  // 2026-11-17 본사 안내문 '카네기 청소년 리더십 과정 안내문'(1면 홍보·지사장용 4면, 사장님 전달)으로 확정:
+  //   09:00~18:00 · 2일 총 16시간 · 반 정원 20명(선착순 마감) · 데일카네기코리아 본원 강의장 · 수강료 77만 원 ·
+  //   2일 모두 중식 제공 · 미국 본사 인증 공식 수료증 발급. hours·quota·meal·cert 는 두 사이트의 청소년 모집 안내 칸이 읽는다
+  //   (site build.js youthAdmissionHtml(), site2 build.js youthAdmission()). 문장은 사이트마다 따로 쓴다 — 안내문 문장을 그대로 옮기지 말 것.
+  //   ⚠ '정원 마감' 표시는 아직 없다 — 정원이 찼다는 연락을 받으면 그때 두 사이트 모집 안내와 광고 소재를 같이 고친다.
+  //   ⚠ 다음 방학 기수를 넣을 때도 open·close·day('월·화' 꼴)·weeks('2일' 꼴)는 꼭 채운다 — 두 사이트의 날짜 문장(youthDates·youthDatesLong)이 이 값을 그대로 읽는다.
+  //     time·hours·quota·meal·cert·fee 는 없으면 그 줄·문장만 빠진다.
+  { name: "서울 청소년",          course: "youth", region: "seoul",         gi: "",    open: "12.28", close: "12.29", day: "월·화", weeks: "2일",  fee: 770000, time: "09:00~18:00", hours: 16, quota: 20, meal: "2일 모두 중식 제공", cert: "미국 본사 인증 공식 수료증", variant: "초6~고1 대상" },
   { name: "서울 CEO",            course: "ceo",   region: "seoul",         gi: "104", open: "01.12", close: "03.30", day: "화",   weeks: "12주", fee: null },
 ];
 
@@ -74,8 +81,8 @@ const SCHEDULE = [
 // 지역 정보 (slug → 표기명, 강의장, 담당 지사 연락처)
 // ------------------------------------------------------------
 const BRANCH = {
-  hq:      { label: "데일카네기코리아 본원",  tel: "02-556-0113",  addr: "서울시 강남구 역삼로 17길 47 카네기빌딩" },
-  gyeonggi:{ label: "경기지사",              tel: "02-556-3301",  addr: "서울시 강남구 역삼로 17길 47 카네기빌딩" },
+  hq:      { label: "데일카네기코리아 본원",  tel: "02-556-0113",  addr: "서울시 강남구 역삼로17길 47 카네기빌딩" },
+  gyeonggi:{ label: "경기지사",              tel: "02-556-3301",  addr: "서울시 강남구 역삼로17길 47 카네기빌딩" },
   daejeon: { label: "대전·세종·충청지사",     tel: "042-824-8250", addr: "대전광역시 유성구 유성대로 875 비에스타워 401호" },
   jeonbuk: { label: "전주·전북지사",          tel: "063-228-1622", addr: "전북 전주시 완산구 석산1길 14, 3층" },
   daegu:   { label: "대구·경북지사",          tel: "053-353-0113", addr: "대구광역시 북구 원대로 130, 7층" },
@@ -86,7 +93,7 @@ const BRANCH = {
 };
 
 const REGIONS = {
-  "seoul":         { name: "서울",           branch: "hq",       venue: "데일카네기코리아 본원 (강남구 역삼로 17길 47)" },
+  "seoul":         { name: "서울",           branch: "hq",       venue: "데일카네기코리아 본원 (강남구 역삼로17길 47)" },
   "busan":         { name: "부산",           branch: "busan",    venue: "부산벤처기업협회 강의장 (사상구 모라로 22, 809호)" },
   "daegu":         { name: "대구",           branch: "daegu",    venue: "수성호텔 (수성구 용학로 106-7)" },
   "daejeon":       { name: "대전",           branch: "daejeon",  venue: "대전 카네기 강의장 (유성구 유성대로 875 비에스타워 401호)" },
@@ -188,14 +195,16 @@ const COURSES = {
     duration: "6주 과정",
     target: "임원 · 사업부장 · 부문장 · 팀장 이상",
   },
+  // 2026-11-17 본사 안내문(카네기 청소년 리더십 과정)에 맞춤 — 이름 '청소년 데일카네기 코스' → '카네기 청소년 리더십 과정',
+  //   3일·초중고 → 2일 총 16시간(8개 모듈)·초6~고1. 주소(youth.html·<지역>-youth.html)는 그대로다
   youth: {
     slug: "youth", code: "YOUTH",
-    name: "청소년 데일카네기 코스",
-    eng: "Dale Carnegie Course for Next Generation",
+    name: "카네기 청소년 리더십 과정",
+    eng: "Carnegie Youth Leadership Course",
     tag: "자신감 · 인간관계 · 커뮤니케이션 · 리더십",
-    short: "청소년의 잠재력과 글로벌 리더 역량, 인성을 키우는 방학 집중 과정",
-    duration: "3일 집중 과정 (방학 시즌)",
-    target: "초 · 중 · 고등학생",
+    short: "초등 6학년부터 고등 1학년까지, 이틀 동안 직접 말하고 발표하며 자신감과 인간관계, 리더십을 익히는 방학 집중 과정",
+    duration: "2일 집중 과정 (총 16시간 · 방학)",
+    target: "초등 6학년 ~ 고등 1학년",
   },
 };
 
