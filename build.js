@@ -119,7 +119,7 @@ function youthAdmissionHtml({ alt = false, id = "admission", region = null } = {
           ${x.time ? `<div><dt>시 간</dt><dd>매일 ${x.time}${x.hours ? ` (${x.weeks} 총 ${x.hours}시간)` : ""}</dd></div>` : ""}
           <div><dt>대 상</dt><dd>${COURSES.youth.target}${x.quota ? ` · 반 정원 ${x.quota}명, 정원이 차면 접수를 마감합니다` : ""}</dd></div>
           <div><dt>장 소</dt><dd>${r.name} · ${r.venue}</dd></div>
-          <div><dt>수강료</dt><dd>${x.fee != null ? feeMan(x.fee) : fee(x.fee)}</dd></div>
+          <div><dt>수강료</dt><dd>${x.fee != null ? feeMan(x.fee) : fee(x.fee)}${x.fee != null && x.sibling ? ` · 형제·자매가 함께 등록하면 ${x.sibling}% 할인(다른 할인과 중복되지 않습니다)` : ""}</dd></div>
           ${x.meal ? `<div><dt>식 사</dt><dd>${x.meal}</dd></div>` : ""}
           ${x.cert ? `<div><dt>수 료</dt><dd>${x.cert} 발급 · 마지막 모듈의 비전 발표까지 마친 학생에게 드립니다</dd></div>` : ""}
           <div><dt>문의·접수</dt><dd><a href="#consult">상담 신청 양식으로 접수해 주세요 →</a></dd></div>

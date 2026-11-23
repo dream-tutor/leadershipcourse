@@ -71,9 +71,10 @@ const SCHEDULE = [
   //   2일 모두 중식 제공 · 미국 본사 인증 공식 수료증 발급. hours·quota·meal·cert 는 두 사이트의 청소년 모집 안내 칸이 읽는다
   //   (site build.js youthAdmissionHtml(), site2 build.js youthAdmission()). 문장은 사이트마다 따로 쓴다 — 안내문 문장을 그대로 옮기지 말 것.
   //   ⚠ '정원 마감' 표시는 아직 없다 — 정원이 찼다는 연락을 받으면 그때 두 사이트 모집 안내와 광고 소재를 같이 고친다.
+  //   sibling: 형제·자매가 함께 등록할 때 할인율(%) — 2026-11-23 본사 모집 공지. 다른 할인과 중복 안 됨. 임직원 자녀 할인은 내부 혜택이라 싣지 않는다.
   //   ⚠ 다음 방학 기수를 넣을 때도 open·close·day('월·화' 꼴)·weeks('2일' 꼴)는 꼭 채운다 — 두 사이트의 날짜 문장(youthDates·youthDatesLong)이 이 값을 그대로 읽는다.
   //     time·hours·quota·meal·cert·fee 는 없으면 그 줄·문장만 빠진다.
-  { name: "서울 청소년",          course: "youth", region: "seoul",         gi: "",    open: "12.28", close: "12.29", day: "월·화", weeks: "2일",  fee: 770000, time: "09:00~18:00", hours: 16, quota: 20, meal: "2일 모두 중식 제공", cert: "미국 본사 인증 공식 수료증", variant: "초6~고1 대상" },
+  { name: "서울 청소년",          course: "youth", region: "seoul",         gi: "",    open: "12.28", close: "12.29", day: "월·화", weeks: "2일",  fee: 770000, time: "09:00~18:00", hours: 16, quota: 20, meal: "2일 모두 중식 제공", cert: "미국 본사 인증 공식 수료증", sibling: 10, variant: "초6~고1 대상" },
   { name: "서울 CEO",            course: "ceo",   region: "seoul",         gi: "104", open: "01.12", close: "03.30", day: "화",   weeks: "12주", fee: null },
 ];
 
